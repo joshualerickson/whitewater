@@ -1,0 +1,13 @@
+utils::globalVariables(c(".", "Base-flow", "Date", "Flow", "Maximum", "Mean",
+                         "Median", "Minimum", "Percentile", "Standard_Deviation",
+                         "Station", "Total", "Flow", "aes", "alt_va", "annotation_logticks",
+                         "atmf", "bflow", "bflowsum", "datetime", "day_nu", "dec_lat_va",
+                         "dec_long_va", "drain_area_va", "drainage_area", "drainage_area_cut",
+                         "fl_val", "flow", "flow_sum", "left_join", "m_d", "mean_va",
+                         "month_abb", "month_day", "month_nu", "name", "pct", "peak_dt",
+                         "peak_va", "quantile", "safely", "scale_x_continuous",
+                         "scale_y_log10", "season", "site_name", "site_no",
+                         "snow_depth", "snow_water_equivalent", "station_nm",
+                         "value", "value1", "wy", "year_month", "year_nu",
+                         "Total Flow")
+)
