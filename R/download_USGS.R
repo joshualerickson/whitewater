@@ -16,7 +16,8 @@
 #'
 #' @importFrom dataRetrieval readNWISdv renameNWISColumns readNWISsite
 #' @importFrom magrittr "%>%"
-#' @importFrom dplyr select
+#' @importFrom dplyr select left_join
+#' @importFrom purrr safely
 
 batch_USGSdv <- function(sites,
                          parameterCd = "00060",
@@ -147,10 +148,7 @@ usgs_min_max_wy <- usgs_raw %>%
             Max_avg = Maximum/atmf,
             Min_avg = Minimum/atmf,
             Mean_avg = Mean/atmf,
-            Med_avg = Median/atmf,
-            drainage_area_cut = cut(drainage_area, breaks =  c(0,50, 150, 400, 600, 800, 1000, 2000, 5000, Inf), dig.lab = 10),
-            drainage_area_cut = str_remove_all(drainage_area_cut, c("\\[|\\]" = "", "\\(|\\)" = "", "," = "-")),
-            drainage_area_cut = factor(drainage_area_cut, levels = c("0-50","50-150", "150-400", "400-600", "600-800", "800-1000", "1000-2000", "2000-5000", "5000-Inf"))) %>%
+            Med_avg = Median/atmf) %>%
             slice_head(n=1) %>% select(-bflow) %>%
             ungroup()
 
@@ -167,14 +165,14 @@ peak_sites <- data.frame(peaks = unique(usgs_min_max_wy$site_no))
 if(isTRUE(parallel)){
 
   peaks <- peak_sites %>% split(.$peaks) %>%
-    furrr::future_map(safely(~peaks_USGS(.$peaks)), ...) %>%
+    furrr::future_map(purrr::safely(~peaks_USGS(.$peaks)), ...) %>%
     purrr::keep(~length(.) != 0) %>%
     purrr::map(~.x[['result']]) %>% data.table::rbindlist()
 
 } else {
 
   peaks <- peak_sites %>% split(.$peaks) %>%
-    purrr::map(safely(~peaks_USGS(.$peaks))) %>%
+    purrr::map(purrr::safely(~peaks_USGS(.$peaks))) %>%
     purrr::keep(~length(.) != 0) %>%
     purrr::map(~.x[['result']]) %>% data.table::rbindlist()
 
@@ -182,7 +180,7 @@ if(isTRUE(parallel)){
 
 
 usgs_min_max_wy <- usgs_min_max_wy %>%
-                   left_join(peaks, by = c("site_no", "wy")) %>%
+                   dplyr::left_join(peaks, by = c("site_no", "wy")) %>%
                    dplyr::select(Station, site_no, wy, Peak = peak_va, peak_dt, dplyr::everything())
 
 
@@ -611,6 +609,7 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 
 
     usgs_statsmv <- data.frame()
+
     for(i in 1:length(sites)){
 
       usgs_st_m <- dataRetrieval::readNWISstat(sites[[i]], parameterCd = "00060",
@@ -618,8 +617,10 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
                                                statReportType = 'monthly') %>%
         mutate(Station = readNWISsite(sites[[i]]) %>% select(station_nm) %>% as.character())
 
-      usgs_statsmv <- data.table::rbindlist(usgs_st_m,usgs_statsmv)
+      usgs_statsmv <- dplyr::bind_rows(usgs_st_m,usgs_statsmv)
+
     }
+
     summary_stats <- usgs_statsmv %>%
       group_by(Station, month = month_nu) %>%
       summarize(p95_va = quantile(mean_va, probs = .95, na.rm = TRUE),
@@ -632,21 +633,11 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
                 p10_va = quantile(mean_va, probs = 0.1, na.rm = TRUE),
                 p05_va = quantile(mean_va, probs = 0.05, na.rm = TRUE))
 
-if(nrow(filter(usgs_statsmv, year_nu %in% stringr::str_extract(Sys.time(), "^.{4}"))) == 0){
 
-  usgs_statsmv <- usgs_statsmv %>% arrange(desc(year_nu)) %>%
-      filter(year_nu %in% as.character(as.numeric(stringr::str_extract(Sys.time(), "^.{4}")) - 1)) %>%
-      rename(month = "month_nu", current_mean_monthly_flow = "mean_va") %>%
-      left_join(summary_stats, by = c("month", "Station"))
-
-} else {
-
-  usgs_statsmv <- usgs_statsmv %>% arrange(desc(year_nu)) %>%
-    filter(year_nu %in% stringr::str_extract(Sys.time(), "^.{4}") |
-           year_nu %in% as.character(as.numeric(stringr::str_extract(Sys.time(), "^.{4}")) - 1)) %>%
+ usgs_statsmv %>% arrange(desc(year_nu)) %>%
     rename(month = "month_nu", current_mean_monthly_flow = "mean_va") %>%
     left_join(summary_stats, by = c("month", "Station"))
-}
+
 
 }
 
@@ -724,7 +715,7 @@ if(startDate == '' & endDate != ''){
 
     fdc_s1 <- rbind.data.frame(f1,f2)
 
-    fdc_1 <- quantile(fdc_s1$Flow, probs = seq(0,1,.01)) %>% data.frame(flow = .) %>%
+    fdc_1 <- quantile(fdc_s1$Flow, probs = seq(0,1,.01), na.rm = T) %>% data.frame(flow = .) %>%
       dplyr::mutate(pct = rownames(.),
                     pct = readr::parse_number(pct),
                     season = paste(fdc_s1[1,]$season))
@@ -736,7 +727,7 @@ if(startDate == '' & endDate != ''){
       fdc_s2 <- fdc %>% dplyr::filter(!month_day %in% fdc_s1$month_day) %>%
         dplyr::mutate(season = paste(stringr::str_sub(span2, 6), ' to ', stringr::str_sub(span1, 6)))
     }
-    fdc_2 <- quantile(fdc_s2$Flow, probs = seq(0,1,.01)) %>% data.frame(flow = .) %>%
+    fdc_2 <- quantile(fdc_s2$Flow, probs = seq(0,1,.01),na.rm = T) %>% data.frame(flow = .) %>%
       dplyr::mutate(pct = rownames(.),
                     pct = readr::parse_number(pct),
                     season = paste(fdc_s2[1,]$season))
@@ -746,30 +737,30 @@ if(startDate == '' & endDate != ''){
 
 
     p1 <- fdc_final %>% dplyr::mutate(`Percentile` = rev(pct)) %>%
-      ggplot(aes(`Percentile`, flow, color = season)) + geom_line() +
-      scale_y_log10()
+      ggplot2::ggplot(ggplot2::aes(`Percentile`, flow, color = season)) + ggplot2::geom_line() +
+      ggplot2::scale_y_log10()
 
   } else {
 
-    fdc <- quantile(fdc_first$Flow, probs = seq(0,1,.01)) %>% data.frame(flow = .) %>%
+    fdc <- quantile(fdc_first$Flow, probs = seq(0,1,.01), na.rm = TRUE) %>% data.frame(flow = .) %>%
       dplyr::mutate(pct = rownames(.),
                     pct = parse_number(pct),
                     `Percentile` = rev(pct))
 
     p1 <- fdc %>%
-      ggplot(aes(`Percentile`, flow)) + geom_line() +
-      scale_y_log10()
+      ggplot2::ggplot(ggplot2::aes(`Percentile`, flow)) + geom_line() +
+      ggplot2::scale_y_log10()
   }
 
 
   title.text <- paste("FDC Plot from ", min(fdc_first$Date), ' to ', max(fdc_first$Date))
 
   styled.plot <- p1 +
-    scale_y_log10(labels = scales::comma) +
-    annotation_logticks(sides=c('l')) +
-    theme_light() +
-    labs(title = title.text, y = 'Discharge (cfs)', color = "Season")+
-    scale_x_continuous(breaks = seq(0,100,10))
+    ggplot2::scale_y_log10(labels = scales::comma) +
+    ggplot2::annotation_logticks(sides=c('l')) +
+    ggplot2::theme_light() +
+    ggplot2::labs(title = title.text, y = 'Discharge (cfs)', color = "Season")+
+    ggplot2::scale_x_continuous(breaks = seq(0,100,10))
 
   styled.plot
 }
