@@ -4,10 +4,12 @@
 \alias{reportSNOTELmv}
 \title{Snotel Report Monthly}
 \usage{
-reportSNOTELmv(procDV, sites = NULL)
+reportSNOTELmv(procDV, choice_months = 12, sites = NULL)
 }
 \arguments{
 \item{procDV}{A previously created \link[whitewater]{batch_SNOTELdv} object}
+
+\item{choice_months}{A numeric with how many months to go back, 12 (default).}
 
 \item{sites}{A vector of SNOTEL site locations, e.g. \code{c("311", "500")}}
 }

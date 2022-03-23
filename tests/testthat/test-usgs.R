@@ -1,4 +1,4 @@
-test_that("usgs dv", {
+test_that("usgs dv flow", {
 
 yaak_dv <- batch_USGSdv('12304500')
 
@@ -26,6 +26,39 @@ expect_equal(nrow(yaak_month), 12)
 yaak_report <- reportUSGSdv(yaak_dv, days = 11)
 
 expect_equal(nrow(yaak_report), 12)
+
+
+})
+
+test_that("usgs dv water temperature", {
+
+  withlacoochee_dv <- batch_USGSdv(sites="02319394",
+                          parameterCd = c("00010", "00060"))
+
+  expect_error(expect_equal(withlacoochee_dv[1,]$site_no, '1204500'))
+
+  expect_equal(withlacoochee_dv[1,]$site_no, '02319394')
+
+  withlacoochee_wy <- wyUSGS(withlacoochee_dv)
+
+  expect_equal(yaak_wy %>%
+                 dplyr::filter(wy == 1967) %>%
+                 dplyr::pull(Peak), 10200)
+
+  yaak_wym <- wymUSGS(yaak_dv)
+
+  expect_equal(yaak_wym %>%
+                 dplyr::filter(wy == 1982) %>%
+                 nrow(), 12
+  )
+  yaak_month <- monthUSGS(yaak_dv)
+
+  expect_equal(nrow(yaak_month), 12)
+
+
+  yaak_report <- reportUSGSdv(yaak_dv, days = 11)
+
+  expect_equal(nrow(yaak_report), 12)
 
 
 })

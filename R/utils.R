@@ -80,41 +80,16 @@ skewed <-
     return(skewer)
   }
 
+#' Convert dt to tibble
+#'
+#' @param data a data.frame and data.table
+#'
+#' @return a tibble df
+dt_to_tibble <- function(data) {
 
+  class(data) <- 'data.frame'
+  data <- tibble::tibble(data)
 
-
-prepping_USGSdv <- function(site_no, parameterCd, start_date, end_date, statCd) {
-
-  gage_data <- readNWISdv(siteNumbers = site_no,
-                          parameterCd = parameterCd,
-                          startDate = start_date,
-                          endDate = end_date,
-                          statCd = statCd) %>%
-    renameNWISColumns()
-
-  # could use attr(gage_data, 'siteInfo') but not a big deal IMO
-
-  gage_info <- tibble(
-    site_no = site_no,
-    drainage_area = readNWISsite(site_no) %>% select(drain_area_va) %>% as.numeric(),
-    Station = readNWISsite(site_no) %>% select(station_nm) %>% as.character(),
-    lat = readNWISsite(site_no) %>% select(dec_lat_va) %>% as.numeric(),
-    long = readNWISsite(site_no) %>% select(dec_long_va) %>% as.numeric(),
-    altitude = readNWISsite(site_no) %>% select(alt_va) %>% as.numeric()
-  )
-
-
-  final_data <- dplyr::left_join(gage_data, gage_info, by = 'site_no')
-
-  if(nrow(final_data) < 1){
-
-    final_data <- NULL
-
-  } else {
-
-    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} was successfully downloaded.')
-
-  }
-
-  final_data
 }
+
+
