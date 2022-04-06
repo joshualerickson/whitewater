@@ -9,21 +9,24 @@
 #' @param end_date A character of date format, e.g. \code{"1990-09-01"}
 #' @param statCd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param wy_month \code{numeric} indicating the start month of the water year. e.g. 10 (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
-#' @return A \code{data.frame} with daily mean flow and added meta-data.
+#' @return A \code{tibble} with daily mean flow and added meta-data.
 #' @export
 #'
 #' @importFrom dataRetrieval readNWISdv renameNWISColumns readNWISsite
 #' @importFrom dplyr select left_join "%>%"
 #' @importFrom purrr safely
 
-batch_USGSdv <- function(sites,
+ww_dvUSGS <- function(sites,
                          parameterCd = "00060",
                          start_date = "",
                          end_date = "",
                          statCd = "00003",
-                         parallel = FALSE, ...) {
+                         parallel = FALSE,
+                         wy_month = 10,
+                         ...) {
 
   site_id_usgs <- data.frame(sites = sites)
 
@@ -40,7 +43,7 @@ batch_USGSdv <- function(sites,
                         ...) %>%
                     purrr::keep(~length(.) != 0) %>%
                     purrr::map(~.x[['result']]) %>%
-                    data.table::rbindlist()
+                    plyr::rbind.fill()
 
   } else {
 
@@ -54,7 +57,7 @@ batch_USGSdv <- function(sites,
                     ))) %>%
                     purrr::keep(~length(.) != 0) %>%
                     purrr::map(~.x[['result']]) %>%
-                    data.table::rbindlist()
+                    plyr::rbind.fill()
 
   }
 
@@ -68,24 +71,27 @@ if(is.null(usgs_raw_dv)){usethis::ui_stop("site query ran into an error: please 
                          month = month(Date),
                          day = day(Date),
                          month_day = str_c(month, day, sep = "-"),
-                         wy = waterYear(Date, TRUE),
+                         wy = waterYear(Date, wy_month, TRUE),
                          month_abb = factor(month.abb[month], levels = month.abb),
                          month_day = str_c(month, day, sep = "-"))
 
+  attr(usgs_raw_dv, 'wy_month') <- wy_month
+  attr(usgs_raw_dv, 'parameterCd') <- parameterCd
+  attr(usgs_raw_dv, 'statCd') <- statCd
+  attr(usgs_raw_dv, 'parameterCd_names') <- cols_to_update(usgs_raw_dv)
+
+
+  usgs_raw_dv
 }
 
 
 #' Water Year Stats (USGS)
-#' @description This function uses the results of the \link[whitewater]{batch_USGSdv} object to
-#' generate mean, maximum, median and standard deviation per water year. It also includes peaks from
-#' \link[dataRetrieval]{readNWISpeak}; annual base-flow and Base-flow Index (BFI) (total-flow/base-flow) from \link[lfstat]{baseflow}
-#'  ; annual coefficient of variance \code{sd of flow/mean of flow}; and normalization methods
-#' \code{Flow/drainage area}, \code{Flow/(all time mean flow)} and \code{Flow/log(standard deviation)}. The
-#' window for all the methods are annual, e.g. 1. This leaves it up to the user to explore different windows if inclined.
-#' @param procDV A previously created \link[whitewater]{batch_USGSdv} object.
+#' @description This function uses the results of the \link[whitewater]{ww_dvUSGS} object to
+#' generate mean, maximum, median and standard deviation per water year.
+#' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} vector with NWIS site numbers.
 #' @param parallel \code{logical} indicating whether to use future_map().
-#' @param ... arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{batch_USGSdv}.
+#' @param ... arguments to pass on to \link[furrr]{future_map} and/or \link[whitewater]{ww_dvUSGS}.
 #' @importFrom lubridate year month day
 #' @importFrom dplyr mutate filter group_by summarise slice_head ungroup everything row_number n
 #' @importFrom stringr str_c str_remove_all
@@ -93,111 +99,78 @@ if(is.null(usgs_raw_dv)){usethis::ui_stop("site query ran into an error: please 
 #' @importFrom lfstat baseflow
 #'
 #' @export
-wyUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
-
+ww_wyUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 
 if(missing(procDV)) {
 
   if(isTRUE(parallel)){
 
-    usgs_raw <- batch_USGSdv(sites = sites, parallel = parallel, ...) %>%
-      mutate(Flow = ifelse(Flow <= 0 , Flow + 0.000001, Flow))
+    usgs_raw <- ww_dvUSGS(sites = sites, parallel = parallel, ...) %>%
+                pad_zero_for_logging()
 
          } else {
 
-    usgs_raw <- batch_USGSdv(sites = sites, ...) %>%
-    dplyr::mutate(Flow = ifelse(Flow <= 0 , Flow + 0.01, Flow))
+    usgs_raw <- ww_dvUSGS(sites = sites, ...) %>%
+                pad_zero_for_logging()
 
             }
 
          } else {
 
     usgs_raw <- procDV %>%
-            mutate(Flow = ifelse(Flow <= 0 ,
-                                 Flow + 0.000001,
-                                 Flow))
+                pad_zero_for_logging()
             }
 
 
-#this is where we create the minimum and maximum per water year (wy).
-  #Also, get the all time mean flow (atmf) so that we can use it later for normalization.
-    #By keeping it all together (normalization) makes it easier for exploration.
-usgs_min_max_wy <- usgs_raw %>%
-                    group_by(Station) %>%
-                    mutate(atmf = mean(Flow, na.rm = TRUE)) %>%
-                    ungroup() %>%
-                    group_by(Station,wy, site_no) %>%
-                    summarise(Count = n(),
-                              Maximum = round(max(Flow, na.rm = TRUE),2),
-                              Minimum = round(min(Flow, na.rm = TRUE),2),
-                              Mean = round(mean(Flow, na.rm = TRUE),2),
-                              Median = round(median(Flow, na.rm = TRUE),2),
-                              Standard_Deviation = round(sd(Flow, na.rm = TRUE),2),
-                              coef_var = Standard_Deviation/Mean,
-                              flow_sum = sum(Flow),
-                              bflow = baseflow(Flow),
-                              bflowsum = sum(bflow, na.rm = TRUE),
-                              bfi = bflowsum/flow_sum,
-                              Max_dnorm = Maximum/drainage_area,
-                              Min_dnorm = Minimum/drainage_area,
-                              Mean_dnorm = Mean/drainage_area,
-                              Med_dnorm = Median/drainage_area,
-                              Max_sdnorm = log(Maximum)/sd(log(Flow), na.rm = TRUE),
-                              Min_sdnorm = log(Minimum)/sd(log(Flow), na.rm = TRUE),
-                              Mean_sdnorm = log(Mean)/sd(log(Flow), na.rm = TRUE),
-                              Med_sdnorm = log(Median)/sd(log(Flow), na.rm = TRUE),
-                              sdNorm = sd(log(Flow), na.rm = TRUE),
-                              Max_avg = Maximum/atmf,
-                              Min_avg = Minimum/atmf,
-                              Mean_avg = Mean/atmf,
-                              Med_avg = Median/atmf) %>%
-                              slice_head(n=1) %>% select(-bflow) %>%
-                              ungroup()
 
-# add peaks
-peak_sites <- data.frame(peaks = unique(usgs_min_max_wy$site_no))
+#summarize by water year with different stats for different params
 
+  cols <- cols_to_update(usgs_raw)
+  usgs_min_max_wy <- usgs_raw %>%
+                      group_by(Station,wy,site_no) %>%
+                      summarise(across(cols,
+                                       list(
+                                         max = ~max(.x, na.rm = TRUE),
+                                         min = ~min(.x, na.rm = TRUE),
+                                         mean = ~mean(.x, na.rm = TRUE),
+                                         median = ~median(.x, na.rm = TRUE),
+                                         stdev = ~sd(.x, na.rm = TRUE),
+                                         coef_var = ~sd(.x, na.rm = TRUE)/mean(.x, na.rm = TRUE),
+                                         max_dnorm = ~max(.x, na.rm = TRUE)/drainage_area,
+                                         min_dnorm = ~min(.x, na.rm = TRUE)/drainage_area,
+                                         mean_dnorm = ~mean(.x, na.rm = TRUE)/drainage_area,
+                                         med_dnorm = ~median(.x, na.rm = TRUE)/drainage_area,
+                                         max_sdnorm = ~log(max(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
+                                         min_sdnorm = ~log(min(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
+                                         mean_sdnorm = ~log(mean(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
+                                         med_sdnorm = ~log(median(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
+                                         sd_norm = ~sd(log(.x), na.rm = TRUE))))  %>%
+                      slice_head(n=1) %>%
+                      ungroup() %>%
+                      dt_to_tibble()
 
-if(isTRUE(parallel)){
+    if("Flow" %in% cols){
 
-  peaks <- peak_sites %>%
-            split(.$peaks) %>%
-            furrr::future_map(purrr::safely(~peaks_USGS(.$peaks)), ...) %>%
-            purrr::keep(~length(.) != 0) %>%
-            purrr::map(~.x[['result']]) %>%
-            data.table::rbindlist()
+      wy_month <- attributes(usgs_raw)$wy_month
 
-} else {
+      usgs_min_max_wy <- adding_peaks_to_df(usgs_min_max_wy, parallel = parallel, wy_month = wy_month)
 
-  peaks <- peak_sites %>%
-            split(.$peaks) %>%
-            purrr::map(purrr::safely(~peaks_USGS(.$peaks))) %>%
-            purrr::keep(~length(.) != 0) %>%
-            purrr::map(~.x[['result']]) %>%
-            data.table::rbindlist()
+      }
 
-}
-
-
-usgs_min_max_wy <- usgs_min_max_wy %>%
-                   dt_to_tibble() %>%
-                   dplyr::left_join(peaks, by = c("site_no", "wy")) %>%
-                   dplyr::select(Station, site_no, wy, Peak = peak_va, peak_dt, dplyr::everything())
-
-
+  usgs_min_max_wy
 }
 
 #' Water Year & Monthly Stats (USGS)
 #'
-#' @description This function uses the results of the \link[whitewater]{batch_USGSdv} object to
+#' @description This function uses the results of the \link[whitewater]{ww_dvUSGS} object to
 #' generate mean, maximum, median and standard deviation per water year per month. Also included is
 #' monthly base-flow and Base-flow Index (BFI) (total-flow/base-flow) from \link[lfstat]{baseflow}
 #' monthly coefficient of variance \code{sd of flow/mean of flow}. Again, the
 #' window for all the methods are monthly, e.g. 1. This leaves it up to the user to explore different windows if inclined.
-#' @param procDV A previously created \link[whitewater]{batch_USGSdv} object.
+#' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} vector with NWIS site numbers.
 #' @param parallel \code{logical} indicating whether to use future_map().
-#' @param ... arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{batch_USGSdv}.
+#' @param ... arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{ww_dvUSGS}.
 #' @return A \code{data.frame}
 #' @export
 #' @importFrom dplyr group_by mutate across summarise rename right_join ungroup n
@@ -206,86 +179,81 @@ usgs_min_max_wy <- usgs_min_max_wy %>%
 #' @importFrom stringr str_c
 #' @importFrom ape where
 #'
-wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
+ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 
-  if(missing(procDV)) {
+    if(missing(procDV)) {
 
     if(isTRUE(parallel)){
 
-      usgs_raw <- batch_USGSdv(sites = sites, parallel = TRUE, ...)
+      usgs_raw <- ww_dvUSGS(sites = sites, parallel = TRUE, ...)
 
     } else {
 
-      usgs_raw <- batch_USGSdv(sites = sites, parallel = FALSE, ...)
+      usgs_raw <- ww_dvUSGS(sites = sites, parallel = FALSE, ...)
 
     }
 
 
-  } else {
+    } else {usgs_raw <- procDV }
 
-    usgs_raw <- procDV }
+      cols <- cols_to_update(usgs_raw)
 
-    usgs_raw_min_max_wy_month <- usgs_raw %>%
-                                group_by(Station, wy, month_abb, month) %>%
-                                summarise(Count = n(),
-                                          Maximum = round(max(Flow, na.rm = TRUE),2),
-                                          Minimum = round(min(Flow, na.rm = TRUE),2),
-                                          Mean = round(mean(Flow, na.rm = TRUE),2),
-                                          Median = round(median(Flow, na.rm = TRUE),2),
-                                          Standard_Deviation = round(sd(Flow, na.rm = TRUE),2),
-                                          coef_var = Standard_Deviation/Mean,
-                                          flow_sum = sum(Flow),
-                                          bflow = baseflow(Flow),
-                                          bflowsum = sum(bflow, na.rm = TRUE),
-                                          bfi = bflowsum/flow_sum) %>%
-                                select(-bflow) %>%
-                                slice_head(n=1) %>%
-                                ungroup() %>%
-                                mutate(year_month = str_c(wy, month,"1", sep = "-"),
-                                       year_month =  parse_date_time(year_month, orders = c("%y-%m-%d", "%y%m%d", "%y-%m-%d %H:%M")),
-                                       year_month = ymd(as.character(year_month)))
+      final_data <- usgs_raw %>%
+                    group_by(Station, wy, month_abb, month) %>%
+                    summarise(across(cols,
+                                     list(
+                                       max = ~max(.x, na.rm = TRUE),
+                                       min = ~min(.x, na.rm = TRUE),
+                                       mean = ~mean(.x, na.rm = TRUE),
+                                       median = ~median(.x, na.rm = TRUE),
+                                       stdev = ~sd(.x, na.rm = TRUE),
+                                       coef_var = ~sd(.x, na.rm = TRUE)/mean(.x, na.rm = TRUE)))) %>%
+                    slice_head(n=1) %>%
+                    ungroup() %>%
+                    mutate(year_month =  str_c(wy, month,"1", sep = "-"),
+                           year_month =  parse_date_time(year_month, orders = c("%y-%m-%d", "%y%m%d", "%y-%m-%d %H:%M")),
+                           year_month =  ymd(as.character(year_month)))
 
-    final_data <- usgs_raw_min_max_wy_month %>%
-                  mutate(across(where(is.numeric), ~replace(., is.infinite(.), 0)))
 
-if(nrow(final_data) < 1){
+  if(nrow(final_data) < 1){
 
   final_data <- NULL
 
-} else {
+  } else {
 
   cli::cli_alert_success('{usethis::ui_value("water year and month")} was successfully downloaded.')
 
-}
+  }
 
-final_data
+  final_data
+
 }
 
 #' Month-Only Stats (USGS)
 #'
-#' @description This function uses the results of the \link[whitewater]{batch_USGSdv} object to
+#' @description This function uses the results of the \link[whitewater]{ww_dvUSGS} object to
 #' generate mean, maximum, median and standard deviation for month-only.
-#' @param procDV A previously created \link[whitewater]{batch_USGSdv} object.
+#' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} vector with NWIS site numbers.
 #' @param parallel \code{logical} indicating whether to use future_map().
-#' @param ... arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{batch_USGSdv}.
+#' @param ... arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{ww_dvUSGS}.
 #' @return A \code{data.frame}
 #' @export
 #' @importFrom dplyr group_by summarise mutate relocate
 #'
 #'
 
-monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
+ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 
   if(missing(procDV)) {
 
     if(isTRUE(parallel)){
 
-      usgs_raw <- batch_USGSdv(sites = sites, parallel = TRUE, ...)
+      usgs_raw <- ww_dvUSGS(sites = sites, parallel = TRUE, ...)
 
     } else {
 
-      usgs_raw <- batch_USGSdv(sites = sites, parallel = FALSE, ...)
+      usgs_raw <- ww_dvUSGS(sites = sites, parallel = FALSE, ...)
 
     }
 
@@ -293,17 +261,19 @@ monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 
     usgs_raw <- procDV }
 
-  usgs_raw_min_max_month <- usgs_raw  %>%
-                            group_by(Station, month_abb) %>%
-                            summarise(Maximum = round(max(Flow, na.rm = TRUE),2),
-                                      Minimum = round(min(Flow, na.rm = TRUE),2),
-                                      Standard_Deviation = round(sd(Flow, na.rm = TRUE),2),
-                                      Mean = round(mean(Flow, na.rm = TRUE),2),
-                                      Median = round(median(Flow, na.rm = TRUE),2)) %>%
-                                      ungroup()
+  cols <- cols_to_update(usgs_raw)
 
-  final_data <- usgs_raw_min_max_month %>%
-                mutate(across(where(is.numeric), ~replace(., is.infinite(.), 0)))
+  final_data <- usgs_raw  %>%
+                group_by(Station, month_abb) %>%
+                summarise(across(cols,
+                                 list(
+                                   max = ~max(.x, na.rm = TRUE),
+                                   min = ~min(.x, na.rm = TRUE),
+                                   mean = ~mean(.x, na.rm = TRUE),
+                                   median = ~median(.x, na.rm = TRUE),
+                                   stdev = ~sd(.x, na.rm = TRUE),
+                                   coef_var = ~sd(.x, na.rm = TRUE)/mean(.x, na.rm = TRUE)))) %>%
+                          ungroup()
 
   if(nrow(final_data) < 1){
 
@@ -320,13 +290,18 @@ monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 
 
 #' Hourly USGS
-#' @description This function generates hourly NWIS flow data from \url{https://waterservices.usgs.gov/nwis/iv/}.
+#' @description This function generates hourly NWIS data from \url{https://waterservices.usgs.gov/nwis/iv/}.
 #' It takes the instantaneous data and floors to 1-hour data by taking the mean.
-#' @param procDV A previously created \link[whitewater]{batch_USGSdv} object.
+#' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{vector} of USGS NWIS sites. \code{optional}
-#' @param days A \code{numeric} input of days.
+#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
+#' @param options A \link[whitewater]{ww_Options} call.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
+#'
+#'
+#' @note  For performance reasons, with multi-site retrievals you may
+#' retrieve data since October 1, 2007 only.
 #'
 #' @export
 #' @importFrom lubridate ymd_hm floor_date
@@ -334,24 +309,26 @@ monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #' @importFrom dataRetrieval renameNWISColumns readNWISsite
 #' @importFrom httr GET write_disk http_error
 #'
-hourlyUSGS <- function(procDV, sites = NULL, days = 7, parallel = FALSE, ...) {
+ww_hourlyUSGS <- function(procDV, sites = NULL, parameterCd = NULL,
+                       options = wwOptions(), parallel = FALSE, ...) {
 
-  if(length(days) > 1){stop("only length 1 vector")}
   if(!is.null(sites) & !missing(procDV)){stop("Can't use both Sites and procDV")}
   if(is.null(sites) & missing(procDV)){stop("Need at least one argument!")}
 
-  choice_days <- days
   #create iteration value
 
-  if(!missing(procDV)){
+ if(!missing(procDV)){
 
   sites <- unique(procDV$site_no)
   station <- unique(procDV$Station)
+  params <- attr(procDV, 'parameterCd')
+  cols <- attr(procDV, 'parameterCd_names')
 
-  }
+  } else {
+
+  if(is.null(parameterCd)){usethis::ui_stop('need a parameterCd')}
 
   if(!is.null(sites) & length(sites) == 1){
-
     sites <- unique(sites)
 
     station <- readNWISsite(sites) %>% select(station_nm) %>% as.character()
@@ -371,7 +348,17 @@ hourlyUSGS <- function(procDV, sites = NULL, days = 7, parallel = FALSE, ...) {
 
   }
 
-  site_station_days <- data.frame(sites = sites, station = station, choice_days = rep(choice_days))
+    params <- parameterCd
+
+    cols <- name_params_to_update(params)
+
+  }
+
+  site_station_days <- tibble(sites = sites,
+                              station = station,
+                              cols = list(cols = cols),
+                              params = list(params = params),
+                              options = list(options))
 
   #run over api, pulling necessary data.
 
@@ -379,19 +366,23 @@ hourlyUSGS <- function(procDV, sites = NULL, days = 7, parallel = FALSE, ...) {
 
     usgs_download_hourly <- site_station_days %>%
                             split(.$sites) %>%
-                            furrr::future_map(safely(~hr_USGS(.))) %>%
+                            furrr::future_map(safely(~hr_USGS(., options = .$options[[1]]))) %>%
                             purrr::keep(~length(.) != 0) %>%
-                            purrr::map(~.x[['result']]) %>%
-                            data.table::rbindlist()
+                            purrr::map(~.x[['result']])%>%
+                            purrr::map(~rename_with(., ~gsub(".*_","", .x),
+                                       dplyr::ends_with(paste0('_', cols)))) %>%
+                            plyr::rbind.fill()
 
   } else {
 
     usgs_download_hourly <- site_station_days %>%
                             split(.$sites) %>%
-                            purrr::map(safely(~hr_USGS(.)))%>%
+                            purrr::map(safely(~hr_USGS(., options = .$options[[1]])))%>%
                             purrr::keep(~length(.) != 0) %>%
                             purrr::map(~.x[['result']]) %>%
-                            data.table::rbindlist()
+                            purrr::map(~rename_with(., ~gsub(".*_","", .x),
+                                        dplyr::ends_with(paste0('_', cols)))) %>%
+                            plyr::rbind.fill()
 
   }
 
@@ -399,86 +390,237 @@ hourlyUSGS <- function(procDV, sites = NULL, days = 7, parallel = FALSE, ...) {
 
   usgs_download_hourly <- usgs_download_hourly %>%
                           dt_to_tibble() %>%
-                          mutate(date = ymd_hm(datetime),
-                               value = ifelse(is.na(value1), NA_real_, as.numeric(value1)),
-                                 fl_val = ifelse(is.na(value), paste("Error"), "Good"))
+                          mutate(date = ymd_hm(datetime))
 
   usgs_download_hourly <- usgs_download_hourly %>%
-                          mutate(date=floor_date(date, "1 hour")) %>%
-                          group_by(Station,site_no, date,fl_val) %>%
-                          dplyr::summarise(value = mean(value, na.rm = TRUE)) %>%
-                          ungroup()
+    mutate(date=floor_date(date, "1 hour")) %>%
+    mutate(across(cols, readr::parse_number)) %>%
+    group_by(Station, site_no,param_type, date) %>%
+    dplyr::summarise(across(cols,
+                            ~mean(.x, na.rm = TRUE))) %>%
+    ungroup()
+
+  usgs_download_hourly <- usgs_download_hourly %>%
+    tidyr::pivot_wider(names_from = param_type, values_from = dplyr::any_of(cols)) %>%
+    dplyr::select_if(all_na) %>%
+    dplyr::rename_with(~name_params_to_update(.x), dplyr::contains('param'))
+
 }
 
-
-#' Plot Water Year Base-flow and Total Flow
+#' Instantaneous USGS
+#' @description This function generates Instantaneous NWIS data from
+#' \url{https://waterservices.usgs.gov/nwis/iv/}..
+#' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
+#' @param sites A \code{vector} of USGS NWIS sites. \code{optional}
+#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
+#' @param options A \link[whitewater]{wwOptions} call.
+#' @param parallel \code{logical} indicating whether to use future_map().
+#' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
-#' @param procDV A previously created \link[whitewater]{batch_USGSdv} object.
-#' @param sites A \code{character} USGS NWIS site.
-#' @param wy A \code{numeric} or \code{character} water year, e.g. 1990:2000, 1990, or c("1990", "2000").
-#' @param parallel \code{logical} indicating whether to use future_map() if using \code{sites} argument.
-#' @param ... arguments to pass on to \link[furrr]{future_map}, \link[whitewater]{batch_USGSdv} and \link[lfstat]{baseflow}.
-#' @importFrom dplyr rename filter
-#' @importFrom ggplot2 ggplot geom_line theme_light labs scale_color_manual facet_wrap
-#' @importFrom tidyr pivot_longer
-#' @importFrom lfstat baseflow
 #' @export
+#' @note  For performance reasons, with multi-site retrievals you may retrieve data since October 1, 2007 only.
+#' @importFrom lubridate ymd_hm floor_date
+#' @importFrom dplyr mutate rename rename_with group_by mutate relocate summarise ungroup contains
+#' @importFrom dataRetrieval renameNWISColumns readNWISsite
+#' @importFrom httr GET write_disk http_error
+#'
+ww_instantaneousUSGS <- function(procDV,
+                                 sites = NULL,
+                                 parameterCd = NULL,
+                                 options = wwOptions(),
+                                 parallel = FALSE, ...) {
 
-plot_baseflow <- function(procDV, sites = NULL, wy, parallel = FALSE, ...) {
+  if(!is.null(sites) & !missing(procDV)){stop("Can't use both Sites and procDV")}
+  if(is.null(sites) & missing(procDV)){stop("Need at least one argument!")}
 
-  if(missing(wy)){usethis::ui_stop("Need wy!")}
+  #create iteration value
 
-  if(missing(procDV)) {
+  if(!missing(procDV)){
 
-    if(isTRUE(parallel)){
-
-       usgs_raw <- batch_USGSdv(sites = sites, parallel = TRUE, ...)
-
-    } else {
-
-      usgs_raw <- batch_USGSdv(sites = sites, parallel = FALSE, ...)
-
-    }
-
+    sites <- unique(procDV$site_no)
+    station <- unique(procDV$Station)
+    params <- attr(procDV, 'parameterCd')
+    cols <- attr(procDV, 'parameterCd_names')
 
   } else {
 
-    usgs_raw <- procDV }
+    if(is.null(parameterCd)){usethis::ui_stop('need a parameterCd')}
 
-  usgs_baseflow <- usgs_raw  %>%
-    filter(wy %in% {{ wy }}) %>%
-    group_by(Station) %>% mutate(bf = lfstat::baseflow(Flow, ...)) %>%
-    rename(`Total Flow` = "Flow", `Base-flow` = "bf")
+    if(!is.null(sites) & length(sites) == 1){
+      sites <- unique(sites)
 
-if(length(unique(usgs_baseflow$Station))>1){
+      station <- readNWISsite(sites) %>% select(station_nm) %>% as.character()
 
-  usgs_baseflow %>% pivot_longer(cols = c(`Total Flow`, `Base-flow`)) %>%
-    ggplot() +
-    geom_line(aes(Date, value, color = name)) +
-    theme_light() +
-    labs(x = "Water Year", y = "Discharge", title = "Base-flow to Total Flow", color = "Flow Types") +
-    scale_color_manual(values = c("red", "black"), labels = c("Base-flow", "Total Flow")) +
-    facet_wrap(~Station, scales = "free")
+    }
 
-} else {
+    if(!is.null(sites) & length(sites) > 1) {
 
-  usgs_baseflow %>% pivot_longer(cols = c(`Total Flow`, `Base-flow`)) %>%
-    ggplot() +
-    geom_line(aes(Date, value, color = name)) +
-    theme_light() +
-    labs(x = "Water Year", y = "Discharge", title = "Base-flow to Total Flow", color = "Flow Types") +
-    scale_color_manual(values = c("red", "black"), labels = c("Base-flow", "Total Flow"))
+      sites <- unique(sites)
+
+      station <- vector()
+      for(i in 1:length(sites)){
+
+        station_1 <- readNWISsite(sites[[i]]) %>% select(station_nm) %>% as.character()
+        station <- append(station,station_1)
+      }
+
+    }
+
+    params <- parameterCd
+
+    cols <- name_params_to_update(params)
+
+  }
+
+  site_station_days <- tibble(sites = sites,
+                              station = station,
+                              cols = list(cols = cols),
+                              params = list(params = params),
+                              options = list(options))
+
+  #run over api, pulling necessary data.
+
+  if(isTRUE(parallel)){
+
+    usgs_download_inst <- site_station_days %>%
+      split(.$sites) %>%
+      furrr::future_map(safely(~hr_USGS(., options = .$options[[1]]))) %>%
+      purrr::keep(~length(.) != 0) %>%
+      purrr::map(~.x[['result']])%>%
+      purrr::map(~rename_with(., ~gsub(".*_","", .x),
+                              dplyr::ends_with(paste0('_', cols)))) %>%
+      plyr::rbind.fill()
+
+  } else {
+
+    usgs_download_inst <- site_station_days %>%
+      split(.$sites) %>%
+      purrr::map(safely(~hr_USGS(., options = .$options[[1]])))%>%
+      purrr::keep(~length(.) != 0) %>%
+      purrr::map(~.x[['result']]) %>%
+      purrr::map(~rename_with(., ~gsub(".*_","", .x),
+                              dplyr::ends_with(paste0('_', cols)))) %>%
+      plyr::rbind.fill()
+
+  }
+
+  #final step: clean up data
+
+  usgs_download_inst <- usgs_download_inst %>%
+    dt_to_tibble() %>%
+    mutate(date = ymd_hm(datetime))
+
+  usgs_download_inst <- usgs_download_inst %>%
+    mutate(across(cols, readr::parse_number)) %>%
+    group_by(Station, site_no,param_type, date) %>%
+    dplyr::summarise(across(cols,
+                            ~mean(.x, na.rm = TRUE))) %>%
+    ungroup()
+
+  usgs_download_inst <- usgs_download_inst %>%
+    tidyr::pivot_wider(names_from = param_type, values_from = dplyr::any_of(cols)) %>%
+    dplyr::select_if(all_na) %>%
+    dplyr::rename_with(~name_params_to_update(.x), dplyr::contains('param'))
+
+  usgs_download_inst <- usgs_download_inst %>% dplyr::filter(!is.na(date))
 }
+#' Prep USGS Hourly
+#'
+#' @param data
+#' @param options
+#'
+hr_USGS <- function(data, options){
+
+  df_final <- data.frame()
+
+  for(i in data$params[[1]]){
+  # download csv
+
+  base_url <- switch(options$date_range,
+  'pfn' = paste0(
+    "https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=",
+    data$sites,
+    "&period=P",options$period,"D&parameterCd=", i, "&siteStatus=", options$site_status
+  ),
+  'date_range' = paste0(
+    "https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=",
+    data$sites,
+    "&startDT=",options$dates[[1]],"T00:00-0000&endDT=",options$dates[[2]],"T00:00-0000",
+    "&parameterCd=", i, "&siteStatus=", options$site_status
+  ),
+  "recent" = paste0(
+    "https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=",
+    data$sites,
+    "&parameterCd=", i, "&siteStatus=", options$site_status
+  )
+  )
+  # try to download the data
+  error <- httr::GET(url = base_url,
+                     httr::write_disk(path = file.path(tempdir(),
+                                                       "usgs_tmp.csv"),
+                                      overwrite = TRUE))
+  # read RDB file to R
+  df <- utils::read.table(file.path(tempdir(),"usgs_tmp.csv"),
+                          header = TRUE,
+                          sep = "\t",
+                          stringsAsFactors = FALSE)
+  #remove excess data
+  df <- df[-1,]
+
+  df <- renameNWISColumns(df) %>%
+    select(site_no, datetime, dplyr::contains(data$cols[[1]]))
+  #add metadata
+
+  df <- df %>%
+    mutate(Station = paste0(data$station),
+           param_type = paste0('param_',i)) %>%
+    relocate(Station)
+
+
+  df_final <- plyr::rbind.fill(df_final, df)
+
+  }
+
+  df_final
+
 }
 
+#' Options
+#'
+#' @param date_range A \code{character}. Indicating how to call the API. 'pfn' = Period from now,
+#' 'date_range' = a date range, "recent" = the most recent value.
+#' @param period A \code{numeric}. Return all values from a period from now.
+#' @param dates A \code{vector}. Return all values within an absolute date range (start and end dates)
+#' @param site_status A \code{character} indicating site status. Example, 'all' = both active and inactive,
+#' 'active' = only active sites, 'inactive' = only inactive sites.
+#' @param ... other options used for options.
+#'
+#' @note A site is considered active if; it has collected time-series (automated) data within the last 183 days (6 months) or
+#' it has collected discrete (manually collected) data within 397 days (13 months).
+#'
+#' @return A list with API options.
+#' @export
+wwOptions <- function(date_range = 'pfn',
+                       period = 11,
+                       dates = NULL,
+                       site_status = 'all',
+                      ...){
+
+wwfilterNULL(
+  list(date_range = date_range,
+       period = period,
+       dates = dates,
+       site_status = site_status,
+       ...)
+)
+}
 
 
 #' USGS Report Daily
 #' @description This function uses the \link[dataRetrieval]{readNWISstat} to gather daily
-#' statistics like quantiles/percentiles. Be aware, the \code{current_daily_mean_flow} variable is calculated from the \link[whitewater]{hourlyUSGS}
-#' by taking the daily mean of the hourly data. Thus, the \code{current_daily_mean_flow} will look different than the \link[whitewater]{hourlyUSGS} and
-#' \href{https://waterdata.usgs.gov/nwis/rt}{USGS Current Water Data} site instantaneous values as it should.
-#' @param procDV A previously created \link[whitewater]{batch_USGSdv} object.
+#' statistics like quantiles/percentiles. Be aware, the parameter values ('Flow', 'Wtemp', etc) are calculated from the \link[whitewater]{ww_hourlyUSGS}
+#' function by taking the daily mean of the hourly data. Thus, the instantaneous values will look different than the daily mean values, as it should.
+#' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} USGS NWIS site.
 #' @param days A \code{numeric} input of days.
 #' @param parallel \code{logical} indicating whether to use future_map().
@@ -488,44 +630,55 @@ if(length(unique(usgs_baseflow$Station))>1){
 #' @importFrom dplyr tibble
 #' @export
 #'
-reportUSGSdv <- function(procDV, sites = NULL, days = 10, parallel = FALSE, ...) {
+ww_reportUSGSdv <- function(procDV, sites = NULL, days = 10, parallel = FALSE, ...) {
 
 
   if(is.null(sites)) {sites <- unique(procDV[['site_no']])}
-  choice_days <- days
+
   #create iteration value
 
   if(!missing(procDV)){
 
     sites <- unique(procDV$site_no)
     station <- unique(procDV$Station)
+    params <- attr(procDV, 'parameterCd')
+    cols <- attr(procDV, 'parameterCd_names')
 
-  }
+  } else {
 
-  if(!is.null(sites) & length(sites) == 1){
+    if(is.null(parameterCd)){usethis::ui_stop('need a parameterCd')}
 
-    sites <- unique(sites)
+    if(!is.null(sites) & length(sites) == 1){
+      sites <- unique(sites)
 
-    station <- readNWISsite(sites) %>% select(station_nm) %>% as.character()
+      station <- readNWISsite(sites) %>% select(station_nm) %>% as.character()
 
-  }
-
-  if(!is.null(sites) & length(sites) > 1) {
-
-    sites <- unique(sites)
-
-    station <- vector()
-    for(i in 1:length(sites)){
-
-      station_1 <- readNWISsite(sites[[i]]) %>% select(station_nm) %>% as.character()
-      station <- append(station,station_1)
     }
 
+    if(!is.null(sites) & length(sites) > 1) {
+
+      sites <- unique(sites)
+
+      station <- vector()
+      for(i in 1:length(sites)){
+
+        station_1 <- readNWISsite(sites[[i]]) %>% select(station_nm) %>% as.character()
+        station <- append(station,station_1)
+      }
+
+    }
+
+    params <- parameterCd
+
+    cols <- name_params_to_update(params)
+
   }
-
   #create blank dataframe to store the information in
-  site_station_days <- data.frame(sites = sites, station = station, choice_days = rep(choice_days))
 
+  site_station_days <- tibble(sites = sites,
+                              station = station,
+                              cols = list(cols = cols),
+                              params = list(params = params))
 
   #run over api, pulling necessary data.
 
@@ -536,17 +689,17 @@ reportUSGSdv <- function(procDV, sites = NULL, days = 10, parallel = FALSE, ...)
                     furrr::future_map(safely(~usgs_statsdv_fun(.))) %>%
                     purrr::keep(~length(.) != 0) %>%
                     purrr::map(~.x[['result']]) %>%
-                    data.table::rbindlist() %>%
+                    plyr::rbind.fill() %>%
                     dt_to_tibble()
 
   } else {
 
     usgs_statsdv <- site_station_days %>%
                     split(.$sites) %>%
-                    purrr::map(safely(~usgs_statsdv_fun(.)))%>%
+                    purrr::map(safely(~usgs_statsdv_fun(.))) %>%
                     purrr::keep(~length(.) != 0) %>%
                     purrr::map(~.x[['result']]) %>%
-                    data.table::rbindlist() %>%
+                    plyr::rbind.fill() %>%
                     dt_to_tibble()
 
   }
@@ -554,23 +707,97 @@ reportUSGSdv <- function(procDV, sites = NULL, days = 10, parallel = FALSE, ...)
 #join it with original
 
 
-  final_data <- clean_hourly_dv_report(data = usgs_statsdv, days = days, ...)
+  final_data <- clean_hourly_dv_report(pp = site_station_days, data = usgs_statsdv, days = days, ...)
 
   final_data
 
 }
 
 
+#' get daily stats
+#'
+#' @param data data.frame
+#'
+#' @return a data.frame with daily stats from readNWISstat
+usgs_statsdv_fun <- function(data) {
+
+  final_data <- dataRetrieval::readNWISstat(data$sites,
+                                            parameterCd = data$params[[1]],
+                                            statType = 'all') %>%
+                                            mutate(Station = readNWISsite(data$sites) %>%
+                                            select(station_nm) %>%
+                                            as.character())
+
+  if(nrow(final_data) < 1){
+
+    final_data <- NULL
+
+  } else {
+
+    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("NWIS Stat")} report was successfully downloaded.')
+
+  }
+
+  final_data
+
+}
+
+
+#' clean up hourly report
+#'
+#' @param usgs_stats_dv a data.frame
+#' @param days how manys days back
+#' @param ... extra stuff to pass to ww_hourlyUSGS
+#'
+#' @return a data.frame
+#'
+clean_hourly_dv_report <- function(pp, data, days, ...) {
+
+
+  cols <- pp$cols[[1]]
+
+  u_hour <- ww_hourlyUSGS(sites = pp$sites,
+                       parameterCd = pp$params[[1]],
+                       options = wwOptions(period = days), ...)
+
+  u_hour <- u_hour %>%
+    mutate(Date = lubridate::as_date(date),
+           year = year(Date),
+           month = month(Date),
+           day = day(Date),
+           month_day = str_c(month, day, sep = "-")) %>%
+    group_by(Station, month_day, Date) %>%
+    summarise(across(cols, ~mean(.x, na.rm = TRUE)))
+
+  usgs_statsdv <- data %>%
+    mutate(month_day = str_c(month_nu, day_nu, sep = "-"))
+
+  t <- vector()
+
+  for(i in 0:days){
+    time <- lubridate::date(Sys.time()) - i
+    time <- time %>% paste(month(.), mday(.), sep = "-") %>% str_remove("...........")
+    t <- append(t, time)
+  }
+
+  usgs_statsdv <- usgs_statsdv %>% filter(month_day %in% t)
+
+  u_hour <- u_hour %>% filter(month_day %in% t)
+
+  usgs_statsdv <- usgs_statsdv %>% left_join(u_hour, by = c("Station", "month_day"))
+}
+
+
 #' USGS Report Monthly
 #' @description Uses \link[dataRetrieval]{readNWISstat} to gather monthly mean flows. Furthermore,
-#' monthly quantiles are generated similar to \link[whitewater]{reportUSGSdv}.
-#' @param procDV A previously created \link[whitewater]{batch_USGSdv} object.
+#' monthly quantiles are generated similar to \link[whitewater]{ww_reportUSGSdv}.
+#' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} USGS NWIS site.
 #' @importFrom dataRetrieval readNWISstat
 #' @importFrom dplyr summarize arrange desc
 #' @export
 #'
-reportUSGSmv <- function(procDV, sites = NULL) {
+ww_reportUSGSmv <- function(procDV, sites = NULL) {
 
 if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 
@@ -609,130 +836,6 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
               left_join(summary_stats, by = c("month", "Station"))
 
 
-}
-
-
-#' USGS Flow Duration Curve
-#' @description This function generates Flow Duration Curves.
-#' @param procDV A previously created \link[whitewater]{batch_USGSdv} object.\code{optional}
-#' @param site A USGS NWIS site. \code{optional}
-#' @param startDate A \code{character} indicating the start date. minimum (default).
-#' @param endDate A \code{character} indicating the end date. maximum (default)
-#' @param span_season A \code{character} vector indicating a season, e.g. c('4-1', '6-30'). If NULL (default), yearly FDC will be produced.
-#'
-#' @return A ggplot. Works with plotly::ggplotly.
-#' @export
-#'
-#'
-#'
-plot_USGSfdc <- function(procDV, site = NULL, startDate = '', endDate = '',span_season = NULL) {
-
-  if(is.null(site) & missing(procDV)) stop("Need at least one argument")
-
-  if(is.null(site)){
-
-if(startDate == '' & endDate != ''){
-
-  fdc_first <- procDV %>% dplyr::filter(Date >= min(Date), Date <= {{endDate}})
-} else if (endDate == '' & startDate != ''){
-
-  fdc_first <- procDV %>% dplyr::filter(Date >= {{startDate}}, Date <= max(Date))
-
-} else if (startDate == '' | endDate == '') {
-
-  fdc_first <- procDV %>% dplyr::filter(Date >= min(Date), Date <= max(Date))
-
-} else {
-
-   fdc_first <- procDV %>% dplyr::filter(Date >= {{startDate}}, Date <= {{endDate}} )
-
-   }
-
-  } else if (missing(procDV)){
-
-    fdc_first <- batch_USGSdv(sites = {{ site }}, start_date = {{ startDate }}, end_date = {{ endDate }})
-
-  }
-
-  if(!is.null(span_season)) {
-
-    span1 <- as.Date(span_season[1], '%m-%d')
-    span2 <- as.Date(span_season[2], '%m-%d')
-
-    fdc <- fdc_first %>% dplyr::mutate(m_d = as.Date(month_day, format = '%m-%d'))
-
-    if(span1 < span2){
-
-      f1 <- fdc %>%
-        dplyr::filter(m_d <= span1) %>%
-        dplyr::mutate(season = paste(stringr::str_sub(span2, 6), ' to ', stringr::str_sub(span1, 6)))
-
-      f2 <- fdc %>%
-        dplyr::filter(m_d >= span2) %>%
-        dplyr::mutate(season = paste(stringr::str_sub(span2, 6), ' to ', stringr::str_sub(span1, 6)))
-
-    } else {
-
-      f1 <- fdc %>%
-        dplyr::filter(m_d >= span1) %>%
-        dplyr::mutate(season = paste(stringr::str_sub(span1, 6), ' to ', stringr::str_sub(span2, 6)))
-
-      f2 <- fdc %>%
-        dplyr::filter(m_d <= span2) %>%
-        dplyr::mutate(season = paste(stringr::str_sub(span1, 6), ' to ', stringr::str_sub(span2, 6)))
-
-    }
-
-    fdc_s1 <- rbind.data.frame(f1,f2)
-
-    fdc_1 <- quantile(fdc_s1$Flow, probs = seq(0,1,.01), na.rm = T) %>% data.frame(flow = .) %>%
-      dplyr::mutate(pct = rownames(.),
-                    pct = readr::parse_number(pct),
-                    season = paste(fdc_s1[1,]$season))
-
-    if(span1 < span2){
-      fdc_s2 <- fdc %>% dplyr::filter(!month_day %in% fdc_s1$month_day) %>%
-        dplyr::mutate(season = paste(stringr::str_sub(span1, 6), ' to ', stringr::str_sub(span2, 6)))
-    } else {
-      fdc_s2 <- fdc %>% dplyr::filter(!month_day %in% fdc_s1$month_day) %>%
-        dplyr::mutate(season = paste(stringr::str_sub(span2, 6), ' to ', stringr::str_sub(span1, 6)))
-    }
-    fdc_2 <- quantile(fdc_s2$Flow, probs = seq(0,1,.01),na.rm = T) %>% data.frame(flow = .) %>%
-      dplyr::mutate(pct = rownames(.),
-                    pct = readr::parse_number(pct),
-                    season = paste(fdc_s2[1,]$season))
-
-
-    fdc_final <- rbind.data.frame(fdc_1, fdc_2)
-
-
-    p1 <- fdc_final %>% dplyr::mutate(`Percentile` = rev(pct)) %>%
-      ggplot2::ggplot(ggplot2::aes(`Percentile`, flow, color = season)) + ggplot2::geom_line() +
-      ggplot2::scale_y_log10()
-
-  } else {
-
-    fdc <- quantile(fdc_first$Flow, probs = seq(0,1,.01), na.rm = TRUE) %>% data.frame(flow = .) %>%
-      dplyr::mutate(pct = rownames(.),
-                    pct = parse_number(pct),
-                    `Percentile` = rev(pct))
-
-    p1 <- fdc %>%
-      ggplot2::ggplot(ggplot2::aes(`Percentile`, flow)) + geom_line() +
-      ggplot2::scale_y_log10()
-  }
-
-
-  title.text <- paste("FDC Plot from ", min(fdc_first$Date), ' to ', max(fdc_first$Date))
-
-  styled.plot <- p1 +
-    ggplot2::scale_y_log10(labels = scales::comma) +
-    ggplot2::annotation_logticks(sides=c('l')) +
-    ggplot2::theme_light() +
-    ggplot2::labs(title = title.text, y = 'Discharge (cfs)', color = "Season")+
-    ggplot2::scale_x_continuous(breaks = seq(0,100,10))
-
-  styled.plot
 }
 
 #' Prep USGS daily
@@ -780,53 +883,16 @@ prepping_USGSdv <- function(site_no, parameterCd, start_date, end_date, statCd) 
   final_data
 }
 
-#' Prep USGS Hourly
-#'
-#' @param data
-#'
-#' @return
-hr_USGS <- function(data){
-  # download url (metric by default!)
-  base_url <- paste0(
-    "https://waterservices.usgs.gov/nwis/iv/?format=rdb&sites=",
-    data$sites,
-    "&period=P",data$choice_days,"D&parameterCd=00060&siteStatus=all"
-  )
-
-  # try to download the data
-  error <- httr::GET(url = base_url,
-                     httr::write_disk(path = file.path(tempdir(),
-                                                       "usgs_tmp.csv"),
-                                      overwrite = TRUE))
-  # read RDB file to R
-  df <- utils::read.table(file.path(tempdir(),"usgs_tmp.csv"),
-                          header = TRUE,
-                          sep = "\t",
-                          stringsAsFactors = FALSE)
-  #remove excess data
-  df <- df[-1,]
-
-  df <- renameNWISColumns(df) %>%
-    select(site_no, datetime, dplyr::contains("_Flow"))
-  #add metadata
-
-  df <- df %>%
-    mutate(Station = paste0(data$station)) %>%
-    dplyr::rename(value = contains("_Flow")) %>%
-    relocate(Station)
-
-}
-
 
 #' Prepping Peaks
 #'
 #' @param site_no
 #'
 #' @return a data.frame with instantaneous peaks from USGS
-peaks_USGS <- function(site_no){
+peaks_USGS <- function(site_no, wy_month){
 
  final_data <- dataRetrieval::readNWISpeak(site_no)%>% select(peak_va, peak_dt, site_no) %>%
-    mutate(wy = waterYear(peak_dt, TRUE))
+               mutate(wy = waterYear(peak_dt, wy_month, TRUE))
 
   if(nrow(final_data) < 1){
 
@@ -844,69 +910,122 @@ peaks_USGS <- function(site_no){
 }
 
 
-#' clean up hourly report
-#'
-#' @param usgs_stats_dv a data.frame
-#' @param days how manys days back
-#' @param ... extra stuff to pass to hourlyUSGS
-#'
-#' @return a data.frame
-#'
-clean_hourly_dv_report <- function(data, days, ...) {
-
-  u_hour <- hourlyUSGS(procDV = data, days = days, ...)
-
-  u_hour <- u_hour %>%
-            mutate(Date = lubridate::as_date(date),
-                   year = year(Date),
-                   month = month(Date),
-                   day = day(Date),
-                   month_day = str_c(month, day, sep = "-")) %>%
-            group_by(Station, month_day, Date) %>%
-            summarise(current_daily_mean_flow = mean(value, na.rm = TRUE))
-
-  usgs_statsdv <- data %>%
-                  mutate(month_day = str_c(month_nu, day_nu, sep = "-"))
-
-  t <- vector()
-
-  for(i in 0:days){
-    time <- lubridate::date(Sys.time()) - i
-    time <- time %>% paste(month(.), mday(.), sep = "-") %>% str_remove("...........")
-    t <- append(t, time)
-  }
-
-  usgs_statsdv <- usgs_statsdv %>% filter(month_day %in% t)
-
-  u_hour <- u_hour %>% filter(month_day %in% t)
-
-  usgs_statsdv <- usgs_statsdv %>% left_join(u_hour, by = c("Station", "month_day"))
-}
 
 
-
-#' get daily stats
+#' Prepping for loggin
 #'
 #' @param data data.frame
 #'
-#' @return a data.frame with daily stats from readNWISstat
-usgs_statsdv_fun <- function(data) {
+#' @return values are padded if zero for paramater of interest
+#'
+pad_zero_for_logging <- function(data){
 
-  final_data <- dataRetrieval::readNWISstat(data$sites, parameterCd = "00060", statType = 'all') %>%
-    mutate(Station = readNWISsite(data$sites) %>%
-             select(station_nm) %>%
-             as.character())
+  param_names <- c("Wtemp","Precip","Flow","GH","SpecCond",
+                   "DO", "pH", "GWL","Turb","WLBLS")
 
-  if(nrow(final_data) < 1){
+  cols_to_update <- names(data[which(names(data) %in% param_names)])
 
-    final_data <- NULL
+   data %>%
+    mutate(across(cols_to_update, ~ifelse(.x <= 0 , .x + 0.000001, .x)))
+}
 
-  } else {
 
-    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("daily")} report was successfully downloaded.')
+#' Get Peak Flows
+#'
+#' @param data data.frame
+#' @param parallel whether to use future_map or not
+#' @param ... other stuff to pass to future_map
+#'
+#' @return a df with peaks added to the water year
 
-  }
+adding_peaks_to_df <- function(data, parallel,wy_month, ...) {
 
-  final_data
+peak_sites <- data.frame(peaks = unique(data$site_no))
 
+
+if(isTRUE(parallel)){
+
+  peaks <- peak_sites %>%
+            split(.$peaks) %>%
+            furrr::future_map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month)), ...) %>%
+            purrr::keep(~length(.) != 0) %>%
+            purrr::map(~.x[['result']]) %>%
+            plyr::rbind.fill()
+
+} else {
+
+  peaks <- peak_sites %>%
+            split(.$peaks) %>%
+            purrr::map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month))) %>%
+            purrr::keep(~length(.) != 0) %>%
+            purrr::map(~.x[['result']]) %>%
+            plyr::rbind.fill()
+
+}
+
+
+usgs_min_max_wy <-  data %>%
+                    dt_to_tibble() %>%
+                    dplyr::left_join(peaks, by = c("site_no", "wy")) %>%
+                    dplyr::select(Station, site_no, wy, peak_va, peak_dt, dplyr::everything())
+}
+
+#' Get param colnames
+#'
+#' @param data data.frame
+#'
+cols_to_update <- function(data){
+
+  param_names <- c("Wtemp","Precip","Flow","GH","SpecCond",
+                   "DO", "pH", "GWL","Turb","WLBLS")
+
+  names(data[which(names(data) %in% param_names)])
+}
+
+#' Get paramCd names
+#'
+#' @param data vector of parameterCd
+#'
+name_params_to_update <- function(x){
+
+
+  param_names <- dplyr::case_when(x == "00010" ~ "Wtemp",
+                   x == "00045" ~ "Precip",
+                   x == "00060" ~ "Flow",
+                   x == "00065" ~ "GH",
+                   x == "00095" ~ "SpecCond",
+                   x == "00300" ~ "DO",
+                   x == "00400" ~ "pH",
+                   x == "62611" ~ "GWL",
+                   x == "63680" ~ "Turb",
+                   x == "72019" ~ "WLBLS",
+                   x == "param_00010" ~ "Wtemp",
+                   x == "param_00045" ~ "Precip",
+                   x == "param_00060" ~ "Flow",
+                   x == "param_00065" ~ "GH",
+                   x == "param_00095" ~ "SpecCond",
+                   x == "param_00300" ~ "DO",
+                   x == "param_00400" ~ "pH",
+                   x == "param_62611" ~ "GWL",
+                   x == "param_63680" ~ "Turb",
+                   x == "param_72019" ~ "WLBLS",
+                   x == "Wtemp_param_00010" ~ "Wtemp",
+                   x == "Precip_param_00045" ~ "Precip",
+                   x == "Flow_param_00060" ~ "Flow",
+                   x == "GH_param_00065" ~ "GH",
+                   x == "SpecCond_param_00095" ~ "SpecCond",
+                   x == "DO_param_00300" ~ "DO",
+                   x == "pH_param_00400" ~ "pH",
+                   x == "GWL_param_62611" ~ "GWL",
+                   x == "Turb_param_63680" ~ "Turb",
+                   x == "WLBLS_param_72019" ~ "WLBLS")
+
+}
+
+#' @description Taken from leaflet filterNULL function
+#' remove NULL elements from a list
+#' @param x A list whose NULL elements will be filtered
+wwfilterNULL <- function(x) {
+  if (length(x) == 0 || !is.list(x)) return(x)
+  x[!unlist(lapply(x, is.null))]
 }

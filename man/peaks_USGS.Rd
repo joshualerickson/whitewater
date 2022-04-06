@@ -4,7 +4,7 @@
 \alias{peaks_USGS}
 \title{Prepping Peaks}
 \usage{
-peaks_USGS(site_no)
+peaks_USGS(site_no, wy_month)
 }
 \arguments{
 \item{site_no}{}

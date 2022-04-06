@@ -4,12 +4,12 @@
 \alias{clean_hourly_dv_report}
 \title{clean up hourly report}
 \usage{
-clean_hourly_dv_report(data, days, ...)
+clean_hourly_dv_report(pp, data, days, ...)
 }
 \arguments{
 \item{days}{how manys days back}
 
-\item{...}{extra stuff to pass to hourlyUSGS}
+\item{...}{extra stuff to pass to ww_hourlyUSGS}
 
 \item{usgs_stats_dv}{a data.frame}
 }

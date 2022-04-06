@@ -6,6 +6,7 @@
 #'
 #' @param x an object of class "Date" or "POSIXt." Missing values are permitted and
 #'result in corresponding missing values in the output.
+#' @param wy_month A numeric indicating the month the water year begins.
 #' @param numeric a logical value that indicates whether the returned values
 #'should be numeric \code{TRUE} or an ordered factor \code{FALSE}. The default
 #'value is \code{FALSE}.
@@ -18,7 +19,7 @@
 #'\code{\link[lubridate]{year}}
 #\code{year} (in lubridate package)
 
-waterYear <- function(x, numeric=FALSE) {
+waterYear <- function(x, wy_month = 10, numeric=FALSE) {
   ## Coding history:
   ##    2005Jul14 DLLorenz Initial dated verion
   ##    2010Feb17 DLLorenz Added option to return numerics
@@ -30,7 +31,7 @@ waterYear <- function(x, numeric=FALSE) {
   yr <- x$year + 1900L
   mn <- x$mon + 1L
   ## adjust for water year
-  yr <- yr + ifelse(mn < 10L, 0L, 1L)
+  yr <- yr + ifelse(mn < as.integer(wy_month), 0L, 1L)
   if(numeric)
     return(yr)
   ordered(yr)
@@ -92,4 +93,10 @@ dt_to_tibble <- function(data) {
 
 }
 
-
+#' all na
+#' @description Remove columns with all NA's
+#' @param x a data.frame
+#'
+all_na <- function(x){
+  any(!is.na(x))
+}

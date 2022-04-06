@@ -4,11 +4,13 @@
 \alias{waterYear}
 \title{Water Year These functions are hi-jacked from smwrBase package.}
 \usage{
-waterYear(x, numeric = FALSE)
+waterYear(x, wy_month = 10, numeric = FALSE)
 }
 \arguments{
 \item{x}{an object of class "Date" or "POSIXt." Missing values are permitted and
 result in corresponding missing values in the output.}
+
+\item{wy_month}{A numeric indicating the month the water year begins.}
 
 \item{numeric}{a logical value that indicates whether the returned values
 should be numeric \code{TRUE} or an ordered factor \code{FALSE}. The default

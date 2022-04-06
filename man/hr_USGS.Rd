@@ -4,13 +4,10 @@
 \alias{hr_USGS}
 \title{Prep USGS Hourly}
 \usage{
-hr_USGS(data)
+hr_USGS(data, options)
 }
 \arguments{
-\item{data}{}
-}
-\value{
-
+\item{options}{}
 }
 \description{
 Prep USGS Hourly
