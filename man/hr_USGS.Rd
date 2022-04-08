@@ -4,10 +4,14 @@
 \alias{hr_USGS}
 \title{Prep USGS Hourly}
 \usage{
-hr_USGS(data, options)
+hr_USGS(data, options, type)
 }
 \arguments{
-\item{options}{}
+\item{data}{the original data.frame}
+
+\item{options}{a list of API arguments}
+
+\item{type}{character of API call}
 }
 \description{
 Prep USGS Hourly

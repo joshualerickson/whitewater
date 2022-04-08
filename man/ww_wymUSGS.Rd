@@ -20,8 +20,5 @@ A \code{data.frame}
 }
 \description{
 This function uses the results of the \link[whitewater]{ww_dvUSGS} object to
-generate mean, maximum, median and standard deviation per water year per month. Also included is
-monthly base-flow and Base-flow Index (BFI) (total-flow/base-flow) from \link[lfstat]{baseflow}
-monthly coefficient of variance \code{sd of flow/mean of flow}. Again, the
-window for all the methods are monthly, e.g. 1. This leaves it up to the user to explore different windows if inclined.
+generate mean, maximum, median and standard deviation per water year per month.
 }
