@@ -34,7 +34,7 @@ This function uses the \link[dataRetrieval]{readNWISstat} to gather daily
 statistics like quantiles/percentiles.
 }
 \note{
-Be aware, the parameter values ('Flow', 'Wtemp', etc) are calculated from the \link[whitewater]{ww_hourlyUSGS}
+Be aware, the parameter values ('Flow', 'Wtemp', etc) are calculated from the \link[whitewater]{ww_floorIVUSGS}
 function by taking the daily mean of the hourly data. Thus, the instantaneous values will look different than the daily mean values, as it should.
 The \code{.temporalFilter} argument is used to generate the window of percentiles.
 }

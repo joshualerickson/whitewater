@@ -9,6 +9,7 @@ wwOptions(
   period = 11,
   dates = NULL,
   site_status = "all",
+  floor_iv = "1 hour",
   ...
 )
 }
@@ -16,12 +17,15 @@ wwOptions(
 \item{date_range}{A \code{character}. Indicating how to call the API. 'pfn' = Period from now,
 'date_range' = a date range, "recent" = the most recent value.}
 
-\item{period}{A \code{numeric}. Return all values from a period from now.}
+\item{period}{A \code{numeric}. Return all values from a period from now (only if 'pfn' is used).}
 
-\item{dates}{A \code{vector}. Return all values within an absolute date range (start and end dates)}
+\item{dates}{A \code{vector}. Return all values within an absolute date range (start and end dates).
+Only if 'date_range' is used.}
 
 \item{site_status}{A \code{character} indicating site status. Example, 'all' = both active and inactive,
 'active' = only active sites, 'inactive' = only inactive sites.}
+
+\item{floor_iv}{A \code{character} on how to floor the instantaneous values, '1 hour' (default).}
 
 \item{...}{other options used for options.}
 }

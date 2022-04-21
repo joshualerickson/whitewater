@@ -33,9 +33,12 @@ ww_dvUSGS(
 \item{...}{arguments to pass on to \link[furrr]{future_map}.}
 }
 \value{
-A \code{tibble} with daily mean flow and added meta-data.
+A \code{tibble} with daily metrics and added meta-data.
 }
 \description{
-This function is basically a wrapper around \link[dataRetrieval]{readNWISdv} but includes
+This function is a wrapper around \link[dataRetrieval]{readNWISdv} but includes
 added variables like water year, lat/lon, station name, altitude and tidied dates.
+}
+\note{
+Use it the same way you would use \link[dataRetrieval]{readNWISdv}.
 }

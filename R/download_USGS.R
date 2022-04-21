@@ -1,7 +1,7 @@
 
 
 #' Process USGS daily values
-#' @description This function is basically a wrapper around \link[dataRetrieval]{readNWISdv} but includes
+#' @description This function is a wrapper around \link[dataRetrieval]{readNWISdv} but includes
 #' added variables like water year, lat/lon, station name, altitude and tidied dates.
 #' @param sites A vector of USGS NWIS sites
 #' @param parameterCd A USGS code for metric, default is "00060".
@@ -12,7 +12,8 @@
 #' @param wy_month \code{numeric} indicating the start month of the water year. e.g. 10 (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
-#' @return A \code{tibble} with daily mean flow and added meta-data.
+#' @note Use it the same way you would use \link[dataRetrieval]{readNWISdv}.
+#' @return A \code{tibble} with daily metrics and added meta-data.
 #' @export
 #'
 #' @importFrom dataRetrieval readNWISdv renameNWISColumns readNWISsite
@@ -87,13 +88,14 @@ ww_dvUSGS <- function(sites,
 
 #' Prep USGS daily
 #'
-#' @param site_no
-#' @param parameterCd
-#' @param start_date
-#' @param end_date
-#' @param statCd
+#' @param site_no A NWIS site number.
+#' @param parameterCd A USGS code for metric, default is "00060".
+#' @param start_date A character of date format, e.g. \code{"1990-09-01"}
+#' @param end_date A character of date format, e.g. \code{"1990-09-01"}
+#' @param statCd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
 #'
-#' @return A tidied data frame with gage data dn info
+#' @noRd
+#' @return A tidied data frame with gage meta-data.
 prepping_USGSdv <- function(site_no, parameterCd, start_date, end_date, statCd) {
 
   gage_data <- readNWISdv(siteNumbers = site_no,
@@ -143,17 +145,22 @@ prepping_USGSdv <- function(site_no, parameterCd, start_date, end_date, statCd) 
 
 #' Water Year Stats (USGS)
 #' @description This function uses the results of the \link[whitewater]{ww_dvUSGS} object to
-#' generate mean, maximum, median and standard deviation per water year.
+#' generate mean, maximum, median, standard deviation and some normalization methods (drainage
+#' area, scaled by log and standard deviation) per water year.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
-#' @param sites A \code{character} vector with NWIS site numbers.
+#' @param sites A \code{character} vector with NWIS site numbers (optional).
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map} and/or \link[whitewater]{ww_dvUSGS}.
+#'
+#' @note If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
+#' provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
+#' @return A \code{tibble} filtered by water year with added meta-data.
+#' @export
+#'
 #' @importFrom lubridate year month day
 #' @importFrom dplyr mutate filter group_by summarise slice_head ungroup everything row_number n
 #' @importFrom stringr str_c str_remove_all
 #' @importFrom stats median sd
-#'
-#' @export
 ww_wyUSGS <- function(procDV,
                       sites = NULL,
                       parallel = FALSE,
@@ -233,13 +240,18 @@ if(missing(procDV)) {
 #' Water Year & Monthly Stats (USGS)
 #'
 #' @description This function uses the results of the \link[whitewater]{ww_dvUSGS} object to
-#' generate mean, maximum, median and standard deviation per water year per month.
+#' generate mean, maximum, median, standard deviation and coefficient of variation
+#' per water year per month.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
-#' @param sites A \code{character} vector with NWIS site numbers.
+#' @param sites A \code{character} vector with NWIS site numbers (optional).
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{ww_dvUSGS}.
-#' @return A \code{data.frame}
+#'
+#' @note If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
+#' provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
+#' @return A \code{tibble} filtered by water year and month with added meta-data.
 #' @export
+#'
 #' @importFrom dplyr group_by mutate across summarise rename right_join ungroup n
 #' @importFrom tidyr pivot_wider
 #' @importFrom lubridate parse_date_time ymd
@@ -299,12 +311,14 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #' Month-Only Stats (USGS)
 #'
 #' @description This function uses the results of the \link[whitewater]{ww_dvUSGS} object to
-#' generate mean, maximum, median and standard deviation for month-only.
+#' generate mean, maximum, median, standard deviation and coefficient of variation for month only.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
-#' @param sites A \code{character} vector with NWIS site numbers.
+#' @param sites A \code{character} vector with NWIS site numbers (optional).
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{ww_dvUSGS}.
-#' @return A \code{data.frame}
+#' @note If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
+#' provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
+#' @return A \code{tibble} filtered by month and added meta-data.
 #' @export
 #' @importFrom dplyr group_by summarise mutate relocate
 #'
@@ -356,19 +370,22 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 }
 
 
-#' Hourly USGS
-#' @description This function generates hourly NWIS data from \url{https://waterservices.usgs.gov/nwis/iv/}.
-#' It takes the instantaneous data and floors to 1-hour data by taking the mean.
+#' Floor IV USGS
+#' @description This function generates instantaneous NWIS data from \url{https://waterservices.usgs.gov/nwis/iv/}
+#' and then floors to a user defined interval with \link[whitewater]{wwOptions}
+#'  ('1 hour' is default) by taking the mean.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
-#' @param sites A \code{vector} of USGS NWIS sites. \code{optional}
+#' @param sites A \code{vector} of USGS NWIS sites (optional).
 #' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
-#' @param options A \link[whitewater]{ww_Options} call.
+#' @param options A \link[whitewater]{wwOptions} call.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
 #'
-#' @note  For performance reasons, with multi-site retrievals you may
-#' retrieve data since October 1, 2007 only.
+#' @note For performance reasons, with multi-site retrievals you may
+#' retrieve data since October 1, 2007 only. If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
+#' provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
+#' @return A \code{tibble} with a user defined interval time step.
 #'
 #' @export
 #' @importFrom lubridate ymd_hm floor_date
@@ -376,7 +393,7 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #' @importFrom dataRetrieval renameNWISColumns readNWISsite
 #' @importFrom httr GET write_disk http_error
 #'
-ww_hourlyUSGS <- function(procDV,
+ww_floorIVUSGS <- function(procDV,
                           sites = NULL,
                           parameterCd = NULL,
                           options = wwOptions(),
@@ -436,7 +453,7 @@ ww_hourlyUSGS <- function(procDV,
 
     usgs_download_hourly <- site_station_days %>%
                             split(.$sites) %>%
-                            furrr::future_map(safely(~hr_USGS(., options = .$options[[1]],
+                            furrr::future_map(safely(~iv_USGS(., options = .$options[[1]],
                                                               type = 'hour')), ...) %>%
                             purrr::keep(~length(.) != 0) %>%
                             purrr::map(~.x[['result']])%>%
@@ -448,7 +465,7 @@ ww_hourlyUSGS <- function(procDV,
 
     usgs_download_hourly <- site_station_days %>%
                             split(.$sites) %>%
-                            purrr::map(safely(~hr_USGS(., options = .$options[[1]],
+                            purrr::map(safely(~iv_USGS(., options = .$options[[1]],
                                                        type = 'hour')))%>%
                             purrr::keep(~length(.) != 0) %>%
                             purrr::map(~.x[['result']]) %>%
@@ -465,7 +482,7 @@ ww_hourlyUSGS <- function(procDV,
                           mutate(date = ymd_hm(datetime))
 
   usgs_download_hourly <- usgs_download_hourly %>%
-    mutate(date=floor_date(date, "1 hour")) %>%
+    mutate(date=floor_date(date, options[['floor_iv']])) %>%
     mutate(across(dplyr::any_of(cols), readr::parse_number)) %>%
     group_by(Station, site_no,param_type, date) %>%
     dplyr::summarise(across(dplyr::any_of(cols),
@@ -481,7 +498,7 @@ ww_hourlyUSGS <- function(procDV,
 
 #' Instantaneous USGS
 #' @description This function generates Instantaneous NWIS data from
-#' \url{https://waterservices.usgs.gov/nwis/iv/}..
+#' \url{https://waterservices.usgs.gov/nwis/iv/}.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{vector} of USGS NWIS sites. \code{optional}
 #' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
@@ -489,8 +506,12 @@ ww_hourlyUSGS <- function(procDV,
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
+#' @note For performance reasons, with multi-site retrievals you may
+#' retrieve data since October 1, 2007 only. If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
+#' provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
+#' @return A \code{tibble} with instantaneous values.
 #' @export
-#' @note  For performance reasons, with multi-site retrievals you may retrieve data since October 1, 2007 only.
+#'
 #' @importFrom lubridate ymd_hm floor_date
 #' @importFrom dplyr mutate rename rename_with group_by mutate relocate summarise ungroup contains
 #' @importFrom dataRetrieval renameNWISColumns readNWISsite
@@ -556,7 +577,7 @@ ww_instantaneousUSGS <- function(procDV,
 
     usgs_download_inst <- site_station_days %>%
       split(.$sites) %>%
-      furrr::future_map(safely(~hr_USGS(., options = .$options[[1]],
+      furrr::future_map(safely(~iv_USGS(., options = .$options[[1]],
                                         type = 'inst')),...) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']])%>%
@@ -568,7 +589,7 @@ ww_instantaneousUSGS <- function(procDV,
 
     usgs_download_inst <- site_station_days %>%
       split(.$sites) %>%
-      purrr::map(safely(~hr_USGS(., options = .$options[[1]],
+      purrr::map(safely(~iv_USGS(., options = .$options[[1]],
                                  type = 'inst')))%>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
@@ -596,13 +617,16 @@ ww_instantaneousUSGS <- function(procDV,
 
   usgs_download_inst <- usgs_download_inst %>% dplyr::filter(!is.na(date))
 }
-#' Prep USGS Hourly
+#' Prep USGS Istantaneous
 #'
 #' @param data the original data.frame
 #' @param options a list of API arguments
 #' @param type character of API call
 #'
-hr_USGS <- function(data, options, type){
+#' @noRd
+#' @return A data.frame with instantaneous values
+#'
+iv_USGS <- function(data, options, type){
 
   df_final <- data.frame()
 
@@ -675,10 +699,12 @@ hr_USGS <- function(data, options, type){
 #'
 #' @param date_range A \code{character}. Indicating how to call the API. 'pfn' = Period from now,
 #' 'date_range' = a date range, "recent" = the most recent value.
-#' @param period A \code{numeric}. Return all values from a period from now.
-#' @param dates A \code{vector}. Return all values within an absolute date range (start and end dates)
+#' @param period A \code{numeric}. Return all values from a period from now (only if 'pfn' is used).
+#' @param dates A \code{vector}. Return all values within an absolute date range (start and end dates).
+#' Only if 'date_range' is used.
 #' @param site_status A \code{character} indicating site status. Example, 'all' = both active and inactive,
 #' 'active' = only active sites, 'inactive' = only inactive sites.
+#' @param floor_iv A \code{character} on how to floor the instantaneous values, '1 hour' (default).
 #' @param ... other options used for options.
 #'
 #' @note A site is considered active if; it has collected time-series (automated) data within the last 183 days (6 months) or
@@ -690,13 +716,15 @@ wwOptions <- function(date_range = 'pfn',
                        period = 11,
                        dates = NULL,
                        site_status = 'all',
-                      ...){
+                       floor_iv = '1 hour',
+                       ...){
 
 wwfilterNULL(
   list(date_range = date_range,
        period = period,
        dates = dates,
        site_status = site_status,
+       floor_iv = floor_iv,
        ...)
 )
 }
@@ -712,7 +740,7 @@ wwfilterNULL(
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
-#' @note Be aware, the parameter values ('Flow', 'Wtemp', etc) are calculated from the \link[whitewater]{ww_hourlyUSGS}
+#' @note Be aware, the parameter values ('Flow', 'Wtemp', etc) are calculated from the \link[whitewater]{ww_floorIVUSGS}
 #' function by taking the daily mean of the hourly data. Thus, the instantaneous values will look different than the daily mean values, as it should.
 #' The \code{.temporalFilter} argument is used to generate the window of percentiles.
 #' @importFrom dataRetrieval readNWISstat
@@ -748,7 +776,7 @@ ww_statsNWIS <- function(procDV,
 
 #' USGS Report Daily
 #' @description This function uses the \link[dataRetrieval]{readNWISstat} to gather daily
-#' statistics like quantiles/percentiles. Be aware, the parameter values ('Flow', 'Wtemp', etc) are calculated from the \link[whitewater]{ww_hourlyUSGS}
+#' statistics like quantiles/percentiles. Be aware, the parameter values ('Flow', 'Wtemp', etc) are calculated from the \link[whitewater]{ww_floorIVUSGS}
 #' function by taking the daily mean of the hourly data. Thus, the instantaneous values will look different than the daily mean values, as it should.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} USGS NWIS site.
@@ -756,6 +784,9 @@ ww_statsNWIS <- function(procDV,
 #' @param days A \code{numeric} input of days.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
+#'
+#' @return A \code{tibble} with daily stats.
+#' @noRd
 #' @importFrom dataRetrieval readNWISstat
 #' @importFrom lubridate mday
 #' @importFrom dplyr tibble
@@ -809,6 +840,7 @@ ww_reportUSGSdv <- function(procDV,
 #' @param data data.frame
 #'
 #' @return a data.frame with daily or monthly stats from readNWISstat
+#' @noRd
 usgs_stats_fun <- function(data, type) {
 
 
@@ -863,13 +895,14 @@ usgs_stats_fun <- function(data, type) {
 #' @param days number of days back
 #'
 #' @return a data.frame
+#' @noRd
 #'
 clean_hourly_dv_report <- function(pp, data, days) {
 
 
   cols <- pp$cols[[1]]
 
-  u_hour <- suppressMessages(ww_hourlyUSGS(sites = pp$sites,
+  u_hour <- suppressMessages(ww_floorIVUSGS(sites = pp$sites,
                        parameterCd = pp$params[[1]],
                        options = wwOptions(period = days)))
 
@@ -909,6 +942,8 @@ clean_hourly_dv_report <- function(pp, data, days) {
 #' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
+#' @return A \code{tibble} with monthly stats.
+#' @noRd
 #' @importFrom dataRetrieval readNWISstat
 #' @importFrom dplyr summarize arrange desc
 #'
@@ -977,6 +1012,9 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 #' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
+#'
+#' @return A \code{tibble} with annual stats.
+#' @noRd
 #' @importFrom dataRetrieval readNWISstat
 #' @importFrom dplyr summarize arrange desc
 #'
@@ -1039,11 +1077,12 @@ ww_reportUSGSav <- function(procDV,
 }
 #' Prep Reports
 #'
-#' @param sites
-#' @param procDV
-#' @param parameterCd
+#' @param sites A \code{character} USGS NWIS site.
+#' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
+#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
 #'
-#' @return A prepped tibble meta data for api call
+#' @return A prepped tibblewith  meta data for api call
+#' @noRd
 prepping_reports <- function(procDV, sites, parameterCd){
 
 if(is.null(sites)) {sites <- unique(procDV[['site_no']])}
@@ -1099,9 +1138,10 @@ site_station_days <- tibble(sites = sites,
 
 #' Prepping Peaks
 #'
-#' @param site_no
+#' @param site_no A \code{character} USGS NWIS site.
 #'
 #' @return a data.frame with instantaneous peaks from USGS
+#' @noRd
 peaks_USGS <- function(site_no, wy_month){
 
  final_data <- dataRetrieval::readNWISpeak(site_no)%>% select(peak_va, peak_dt, site_no) %>%
@@ -1129,7 +1169,8 @@ peaks_USGS <- function(site_no, wy_month){
 #'
 #' @param data data.frame
 #'
-#' @return values are padded if zero for paramater of interest
+#' @return values are padded if zero for parameter of interest
+#' @noRd
 #'
 pad_zero_for_logging <- function(data){
 
@@ -1149,7 +1190,8 @@ pad_zero_for_logging <- function(data){
 #' @param parallel whether to use future_map or not
 #' @param ... other stuff to pass to future_map
 #'
-#' @return a df with peaks added to the water year
+#' @return a df with peaks by water year
+#' @noRd
 
 adding_peaks_to_df <- function(data, parallel,wy_month, ...) {
 
@@ -1187,6 +1229,9 @@ usgs_min_max_wy <-  data %>%
 #'
 #' @param data data.frame
 #'
+#' @return A vector with parameter names in the data.frame
+#' @noRd
+#'
 cols_to_update <- function(data){
 
   param_names <- c("Wtemp","Precip","Flow","GH","SpecCond",
@@ -1197,7 +1242,9 @@ cols_to_update <- function(data){
 
 #' Get paramCd names
 #'
-#' @param data vector of parameterCd
+#' @param x vector of parameterCd
+#' @return A vector of length 1 or n, matching the length of the logical input or output vectors.
+#' @noRd
 #'
 name_params_to_update <- function(x){
 
@@ -1239,6 +1286,8 @@ name_params_to_update <- function(x){
 #' @description Taken from leaflet filterNULL function
 #' remove NULL elements from a list
 #' @param x A list whose NULL elements will be filtered
+#' @return A list that has NULL elements removed
+#' @noRd
 wwfilterNULL <- function(x) {
   if (length(x) == 0 || !is.list(x)) return(x)
   x[!unlist(lapply(x, is.null))]
@@ -1249,6 +1298,9 @@ wwfilterNULL <- function(x) {
 #' @title Get error codes
 #' @description Used for instantneous API call where sometimes an error occurrs. We just
 #' want to capture the description.
+#' @param x A character
+#' @return A vector of length 1 or n, matching the length of the logical input or output vectors.
+#' @noRd
 iv_error_codes <- function(x){
 
   dplyr::case_when(x == "Bkw" ~	'Value is affected by backwater at the measurement site.',

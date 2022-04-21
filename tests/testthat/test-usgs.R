@@ -146,3 +146,32 @@ test_that('two sites two params reports', {
 })
 
 
+test_that('two sites two params reports using main function', {
+
+  usgs_dv <- purrr::quietly(ww_dvUSGS)
+
+  usgs_dv <- usgs_dv(sites=c("02319394", "12304500"),
+                     parameterCd = c("00010", "00060"))
+
+  usgs_report <- purrr::quietly(ww_statsNWIS)
+
+  #daily
+  usgs_reportdv <- usgs_report(usgs_dv$result, days = 11)
+
+  expect_equal(nrow(usgs_reportdv$result), 36)
+
+  #monthly
+  usgs_reportmv <- usgs_report(usgs_dv$result,
+                               temporalFilter = 'monthly')
+
+  expect_equal(nrow(usgs_reportmv$result), 1061)
+
+  #yearly
+  usgs_reportyv <- usgs_report(usgs_dv$result,
+                               temporalFilter = 'yearly')
+
+  expect_equal(nrow(usgs_reportyv$result), 82)
+
+})
+
+

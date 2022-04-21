@@ -9,13 +9,21 @@ ww_wyUSGS(procDV, sites = NULL, parallel = FALSE, ...)
 \arguments{
 \item{procDV}{A previously created \link[whitewater]{ww_dvUSGS} object.}
 
-\item{sites}{A \code{character} vector with NWIS site numbers.}
+\item{sites}{A \code{character} vector with NWIS site numbers (optional).}
 
 \item{parallel}{\code{logical} indicating whether to use future_map().}
 
 \item{...}{arguments to pass on to \link[furrr]{future_map} and/or \link[whitewater]{ww_dvUSGS}.}
 }
+\value{
+A \code{tibble} filtered by water year with added meta-data.
+}
 \description{
 This function uses the results of the \link[whitewater]{ww_dvUSGS} object to
-generate mean, maximum, median and standard deviation per water year.
+generate mean, maximum, median, standard deviation and some normalization methods (drainage
+area, scaled by log and standard deviation) per water year.
+}
+\note{
+If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
+provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
 }
