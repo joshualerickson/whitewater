@@ -9,5 +9,5 @@ utils::globalVariables(c(".", "Base-flow", "Date", "Flow", "Maximum", "Mean",
                          "scale_y_log10", "season", "site_name", "site_no",
                          "snow_depth", "snow_water_equivalent", "station_nm",
                          "value", "value1", "wy", "year_month", "year_nu",
-                         "Total Flow")
+                         "Total Flow", "param_type", "endDate")
 )

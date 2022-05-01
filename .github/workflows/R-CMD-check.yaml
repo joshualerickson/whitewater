@@ -45,16 +45,4 @@ jobs:
 
       - uses: r-lib/actions/check-r-package@v1
 
-      - name: Install dependencies
-        run: |
-          install.packages(c("remotes"))
-          remotes::install_deps(dependencies = TRUE)
-          remotes::install_cran("rcmdcheck")
-          remotes::install_cran("covr")
-        shell: Rscript {0}
-
-      - name: Test coverage
-        run: covr::codecov()
-        shell: Rscript {0}
-
 
