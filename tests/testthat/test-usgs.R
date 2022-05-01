@@ -38,7 +38,7 @@ expect_equal(yaak_reportmv %>%
 test_that("usgs water temperature", {
 
   withlacoochee_dv <- ww_dvUSGS(sites="02319394",
-                          parameterCd = c("00010"))
+                          parameter_cd = c("00010"))
 
   expect_error(expect_equal(withlacoochee_dv[1,]$site_no, '1204500'))
 
@@ -81,7 +81,7 @@ test_that("two sites two parameters", {
   usgs_dv <- purrr::quietly(ww_dvUSGS)
 
   usgs_dv <- usgs_dv(sites=c("02319394", "12304500"),
-                     parameterCd = c("00010", "00060"))
+                     parameter_cd = c("00010", "00060"))
 
   expect_error(expect_equal(usgs_dv$result[1,]$site_no, '1204500'))
 
@@ -119,7 +119,7 @@ test_that('two sites two params reports', {
   usgs_dv <- purrr::quietly(ww_dvUSGS)
 
   usgs_dv <- usgs_dv(sites=c("02319394", "12304500"),
-                     parameterCd = c("00010", "00060"))
+                     parameter_cd = c("00010", "00060"))
 
   usgs_report <- purrr::quietly(ww_reportUSGSdv)
   usgs_reportdv <- usgs_report(usgs_dv$result, days = 11)
@@ -127,7 +127,7 @@ test_that('two sites two params reports', {
   expect_equal(nrow(usgs_reportdv$result), 36)
 
   usgs_report2 <- usgs_report(sites=c("12304500", "02319394"),
-                                  parameterCd = c("00010", "00060"),
+                                  parameter_cd = c("00010", "00060"),
                                   days = 11)
 
   expect_equal(nrow(usgs_report2$result), 36)
@@ -135,7 +135,7 @@ test_that('two sites two params reports', {
   usgs_report <- purrr::quietly(ww_reportUSGSmv)
 
   usgs_reportmv <- usgs_report(sites=c("12304500", "02319394"),
-                                   parameterCd = c("00010", "00060"))
+                                   parameter_cd = c("00010", "00060"))
 
   expect_equal(usgs_reportmv$result %>%
                  dplyr::filter(year_nu == 2021,
@@ -151,7 +151,7 @@ test_that('two sites two params reports using main function', {
   usgs_dv <- purrr::quietly(ww_dvUSGS)
 
   usgs_dv <- usgs_dv(sites=c("02319394", "12304500"),
-                     parameterCd = c("00010", "00060"))
+                     parameter_cd = c("00010", "00060"))
 
   usgs_report <- purrr::quietly(ww_statsNWIS)
 
@@ -174,4 +174,29 @@ test_that('two sites two params reports using main function', {
 
 })
 
+test_that("water year", {
 
+  yaak_dv <- ww_dvUSGS('12304500', wy_month = 6)
+
+  expect_equal(yaak_dv %>%
+    dplyr::filter(month %in% c(5,6),
+                  year == 1956) %>%
+    dplyr::group_by(month) %>%
+    dplyr::slice(n = 1) %>%
+    dplyr::pull(wy),
+    c(1956,1957)
+  )
+
+
+  yaak_dv <- ww_dvUSGS('12304500', wy_month = 4)
+
+  expect_equal(yaak_dv %>%
+                 dplyr::filter(month %in% c(3,4),
+                               year == 1956) %>%
+                 dplyr::group_by(month) %>%
+                 dplyr::slice(n = 1) %>%
+                 dplyr::pull(wy),
+               c(1956,1957)
+  )
+
+})

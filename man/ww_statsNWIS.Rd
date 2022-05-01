@@ -8,7 +8,7 @@ ww_statsNWIS(
   procDV,
   sites = NULL,
   temporalFilter = "daily",
-  parameterCd = NULL,
+  parameter_cd = NULL,
   days = 10,
   parallel = FALSE,
   ...
@@ -21,7 +21,7 @@ ww_statsNWIS(
 
 \item{temporalFilter}{A \code{character} for the stat summary window, e.g. 'daily' (default), 'monthly', 'yearly'.}
 
-\item{parameterCd}{A USGS code parameter code, only if using \code{sites} argument.}
+\item{parameter_cd}{A USGS code parameter code, only if using \code{sites} argument.}
 
 \item{days}{A \code{numeric} input of days to go back from today (only needed if using .temporalFilter = 'daily').}
 

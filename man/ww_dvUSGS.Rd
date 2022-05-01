@@ -6,10 +6,10 @@
 \usage{
 ww_dvUSGS(
   sites,
-  parameterCd = "00060",
+  parameter_cd = "00060",
   start_date = "",
   end_date = "",
-  statCd = "00003",
+  stat_cd = "00003",
   parallel = FALSE,
   wy_month = 10,
   ...
@@ -18,13 +18,13 @@ ww_dvUSGS(
 \arguments{
 \item{sites}{A vector of USGS NWIS sites}
 
-\item{parameterCd}{A USGS code for metric, default is "00060".}
+\item{parameter_cd}{A USGS code for metric, default is "00060".}
 
 \item{start_date}{A character of date format, e.g. \code{"1990-09-01"}}
 
 \item{end_date}{A character of date format, e.g. \code{"1990-09-01"}}
 
-\item{statCd}{character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.}
+\item{stat_cd}{character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.}
 
 \item{parallel}{\code{logical} indicating whether to use future_map().}
 

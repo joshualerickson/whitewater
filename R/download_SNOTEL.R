@@ -801,16 +801,17 @@ snotel_wym <- function(md){
 #' A list of parameter codes can be found here: \url{https://nwis.waterdata.usgs.gov/nwis/pmcodes/}
 #' A list of statistic codes can be found here: \url{https://nwis.waterdata.usgs.gov/nwis/help/?read_file=stat&format=table}
 #'
-#' @param siteNumbers string or vector of strings USGS site number.  This is usually an 8 digit number
-#' @param parameterCd string or vector of USGS parameter code.  This is usually an 5 digit number.
-#' @param startDate character starting date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates
+#' @param sites string or vector of strings USGS site number.  This is usually an 8 digit number
+#' @param service string NRCS service to call. Possible values are "dv" (daily values), "hv" (hourly values),
+#'  "mv" (monthly values), "wy" (annual water year values), "cy" (calendar year values), and
+#'  "smv" (semi-monthly values).
+#' @param parameterCd string or vector of NRCS parameter code.
+#'   This is usually an 3-4 digit character, ex. 'WTEQ' = snow water equivalent.
+#' @param start_date character starting date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates
 #' retrieval for the earliest possible record.
-#' @param endDate character ending date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates
+#' @param end_date character ending date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates
 #' retrieval for the latest possible record.
 #' @param statCd string or vector USGS statistic code only used for daily value service. This is usually 5 digits.  Daily mean (00003) is the default.
-#' @param service string USGS service to call. Possible values are "dv" (daily values), "uv" (unit/instantaneous values),
-#'  "qw" (water quality data), "gwlevels" (groundwater),and "rating" (rating curve), "peak", "meas" (discrete streamflow measurements),
-#'  "stat" (statistics web service BETA).
 #' @param format string, can be "tsv" or "xml", and is only applicable for daily and unit value requests.  "tsv" returns results faster, but there is a possiblitiy that an incomplete file is returned without warning. XML is slower,
 #' but will offer a warning if the file was incomplete (for example, if there was a momentary problem with the internet connection). It is possible to safely use the "tsv" option,
 #' but the user must carefully check the results to see if the data returns matches what is expected. The default is therefore "xml".
@@ -845,20 +846,23 @@ snotel_wym <- function(md){
 #' url_peak <- constructNWISURL(site_id, service="peak")
 #' url_meas <- constructNWISURL(site_id, service="meas")
 #' urlQW <- constructNWISURL("450456092225801","70300",startDate="",endDate="","qw",expanded=TRUE)
-constructSNOTELURL <- function(siteNumbers,
-                               parameterCd="00060",
-                               startDate="",
-                               endDate="",
+constructSNOTELURL <- function(sites,
                                service,
-                               statCd="00003",
-                               format="xml",
-                               expanded=TRUE){
+                               parameterCd = 'WTEQ',
+                               start_date = "",
+                               end_date = "",
+                               statCd = 'MEAN',
+                               value_type = 'value',
+                               depth = NUL){
 
-  service <- match.arg(service, c("dv","uv","iv","iv_recent","qw","gwlevels","rating","peak","meas","stat", "qwdata"))
+  service <- match.arg(service, c("dv","hv", 'mv', 'wy', 'cy', 'smv'))
 
-  service[service == "qw"] <- "qwdata"
-  service[service == "meas"] <- "measurements"
-  service[service == "uv"] <- "iv"
+  service[service == "dv"] <- "daily"
+  service[service == "hv"] <- "hourly"
+  service[service == "mv"] <- "monthly"
+  service[service == "wy"] <- "annual_water_year"
+  service[service == "cy"] <- "annual_calendar_year"
+  service[service == "smv"] <- "semimonthly"
 
   if(any(!is.na(parameterCd) & parameterCd != "all")){
     pcodeCheck <- all(nchar(parameterCd) == 5) & all(!is.na(suppressWarnings(as.numeric(parameterCd))))
@@ -880,7 +884,7 @@ constructSNOTELURL <- function(siteNumbers,
   baseURL <- drURL(service, Access=pkg.env$access)
 
   switch(service,
-         qwdata = {
+         dv = {
            if(multipleSites){
              searchCriteria <- "multiple_site_no"
              url <- appendDrURL(baseURL,multiple_site_no=siteNumbers)

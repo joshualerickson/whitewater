@@ -2,9 +2,14 @@ Package: whitewater
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+    person(given = "Josh",
+           family = "Erickson",
+           role = c('aut', 'cre'),
+           email = "joshualerickson@gmail.com"
+           )
+Description: Provides methods for getting water data.
+URL: https://github.com/joshualerickson/whitewater/
+BugReports: https://github.com/joshualerickson/whitewater/issues/
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -24,10 +29,14 @@ Imports:
     readr,
     tidyr,
     cli,
-    tibble,
     dataRetrieval,
     crayon
 Suggests: 
+    ggplot2,
+    magrittr,
+    covr,
+    rmarkdown,
+    knitr,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Depends: 

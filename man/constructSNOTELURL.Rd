@@ -5,30 +5,31 @@
 \title{Construct NWIS url for data retrieval}
 \usage{
 constructSNOTELURL(
-  siteNumbers,
-  parameterCd = "00060",
-  startDate = "",
-  endDate = "",
+  sites,
   service,
-  statCd = "00003",
-  format = "xml",
-  expanded = TRUE
+  parameterCd = "WTEQ",
+  start_date = "",
+  end_date = "",
+  statCd = "MEAN",
+  value_type = "value",
+  depth = NUL
 )
 }
 \arguments{
-\item{siteNumbers}{string or vector of strings USGS site number.  This is usually an 8 digit number}
+\item{sites}{string or vector of strings USGS site number.  This is usually an 8 digit number}
 
-\item{parameterCd}{string or vector of USGS parameter code.  This is usually an 5 digit number.}
+\item{service}{string NRCS service to call. Possible values are "dv" (daily values), "hv" (hourly values),
+"mv" (monthly values), "wy" (annual water year values), "cy" (calendar year values), and
+"smv" (semi-monthly values).}
 
-\item{startDate}{character starting date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates
+\item{parameterCd}{string or vector of NRCS parameter code.
+This is usually an 3-4 digit character, ex. 'WTEQ' = snow water equivalent.}
+
+\item{start_date}{character starting date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates
 retrieval for the earliest possible record.}
 
-\item{endDate}{character ending date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates
+\item{end_date}{character ending date for data retrieval in the form YYYY-MM-DD. Default is "" which indicates
 retrieval for the latest possible record.}
-
-\item{service}{string USGS service to call. Possible values are "dv" (daily values), "uv" (unit/instantaneous values),
-"qw" (water quality data), "gwlevels" (groundwater),and "rating" (rating curve), "peak", "meas" (discrete streamflow measurements),
-"stat" (statistics web service BETA).}
 
 \item{statCd}{string or vector USGS statistic code only used for daily value service. This is usually 5 digits.  Daily mean (00003) is the default.}
 

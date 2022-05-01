@@ -7,7 +7,7 @@
 ww_floorIVUSGS(
   procDV,
   sites = NULL,
-  parameterCd = NULL,
+  parameter_cd = NULL,
   options = wwOptions(),
   parallel = FALSE,
   ...
@@ -18,7 +18,7 @@ ww_floorIVUSGS(
 
 \item{sites}{A \code{vector} of USGS NWIS sites (optional).}
 
-\item{parameterCd}{A USGS code parameter code, only if using \code{sites} argument.}
+\item{parameter_cd}{A USGS code parameter code, only if using \code{sites} argument.}
 
 \item{options}{A \link[whitewater]{wwOptions} call.}
 

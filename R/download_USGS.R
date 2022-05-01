@@ -4,10 +4,10 @@
 #' @description This function is a wrapper around \link[dataRetrieval]{readNWISdv} but includes
 #' added variables like water year, lat/lon, station name, altitude and tidied dates.
 #' @param sites A vector of USGS NWIS sites
-#' @param parameterCd A USGS code for metric, default is "00060".
+#' @param parameter_cd A USGS code for metric, default is "00060".
 #' @param start_date A character of date format, e.g. \code{"1990-09-01"}
 #' @param end_date A character of date format, e.g. \code{"1990-09-01"}
-#' @param statCd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
+#' @param stat_cd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param wy_month \code{numeric} indicating the start month of the water year. e.g. 10 (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
@@ -21,10 +21,10 @@
 #' @importFrom purrr safely
 
 ww_dvUSGS <- function(sites,
-                         parameterCd = "00060",
+                         parameter_cd = "00060",
                          start_date = "",
                          end_date = "",
-                         statCd = "00003",
+                         stat_cd = "00003",
                          parallel = FALSE,
                          wy_month = 10,
                          ...) {
@@ -36,10 +36,10 @@ ww_dvUSGS <- function(sites,
     usgs_raw_dv <- site_id_usgs %>%
                     split(.$sites) %>%
                     furrr::future_map(purrr::safely(~prepping_USGSdv(.$sites,
-                                                                     parameterCd,
+                                                                     parameter_cd,
                                                                      start_date,
                                                                      end_date,
-                                                                     statCd
+                                                                     stat_cd
                                                                      )),
                         ...) %>%
                     purrr::keep(~length(.) != 0) %>%
@@ -51,10 +51,10 @@ ww_dvUSGS <- function(sites,
     usgs_raw_dv <- site_id_usgs %>%
                     split(.$sites) %>%
                     purrr::map(purrr::safely(~prepping_USGSdv(.$sites,
-                                                              parameterCd,
+                                                              parameter_cd,
                                                               start_date,
                                                               end_date,
-                                                              statCd
+                                                              stat_cd
                     ))) %>%
                     purrr::keep(~length(.) != 0) %>%
                     purrr::map(~.x[['result']]) %>%
@@ -77,9 +77,9 @@ ww_dvUSGS <- function(sites,
                          month_day = str_c(month, day, sep = "-"))
 
   attr(usgs_raw_dv, 'wy_month') <- wy_month
-  attr(usgs_raw_dv, 'parameterCd') <- parameterCd
-  attr(usgs_raw_dv, 'statCd') <- statCd
-  attr(usgs_raw_dv, 'parameterCd_names') <- cols_to_update(usgs_raw_dv)
+  attr(usgs_raw_dv, 'parameter_cd') <- parameter_cd
+  attr(usgs_raw_dv, 'stat_cd') <- stat_cd
+  attr(usgs_raw_dv, 'parameter_cd_names') <- cols_to_update(usgs_raw_dv)
 
 
   usgs_raw_dv
@@ -89,21 +89,21 @@ ww_dvUSGS <- function(sites,
 #' Prep USGS daily
 #'
 #' @param site_no A NWIS site number.
-#' @param parameterCd A USGS code for metric, default is "00060".
+#' @param parameter_cd A USGS code for metric, default is "00060".
 #' @param start_date A character of date format, e.g. \code{"1990-09-01"}
 #' @param end_date A character of date format, e.g. \code{"1990-09-01"}
-#' @param statCd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
+#' @param stat_cd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
 #'
 #' @noRd
 #' @return A tidied data frame with gage meta-data.
-prepping_USGSdv <- function(site_no, parameterCd, start_date, end_date, statCd) {
+prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd) {
 
   gage_data <- readNWISdv(siteNumbers = site_no,
-                          parameterCd = parameterCd,
+                          parameterCd = parameter_cd,
                           startDate = start_date,
                           endDate = end_date,
-                          statCd = statCd) %>%
-    dataRetrieval::renameNWISColumns()
+                          statCd = stat_cd) %>%
+                          dataRetrieval::renameNWISColumns()
 
   # could use attr(gage_data, 'siteInfo') but not a big deal IMO
 
@@ -122,17 +122,17 @@ prepping_USGSdv <- function(site_no, parameterCd, start_date, end_date, statCd) 
   if(nrow(final_data) < 1){
 
     final_data <- NULL
-    cli::cli_alert('{usethis::ui_field(final_data$Station)} {crayon::red("your request for ")} {usethis::ui_value("daily values")} with statCd ({statCd}), parameterCd ({parameterCd}) and site # ({site_no}) ran into a request error.')
+    cli::cli_alert('{usethis::ui_field(final_data$Station)} {crayon::red("your request for ")} {usethis::ui_value("daily values")} with stat_cd ({stat_cd}), parameter_cd ({parameter_cd}) and site # ({site_no}) ran into a request error.')
 
   } else {
 
     cols_in_fd <- cols_to_update(final_data)
-    names_in_params <- name_params_to_update(parameterCd)
+    names_in_params <- name_params_to_update(parameter_cd)
 
     if(length(unique(names_in_params)) != length(cols_in_fd)){
 
       cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("daily")} was successfully downloaded.
-                              {crayon::red("(warning)")} parameterCd {usethis::ui_value(names_in_params[which(!(names_in_params %in% cols_in_fd))])} returned no data for {usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)}.')
+                              {crayon::red("(warning)")} parameter_cd {usethis::ui_value(names_in_params[which(!(names_in_params %in% cols_in_fd))])} returned no data for {usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)}.')
 
      } else {
       cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("daily")} was successfully downloaded.')
@@ -376,7 +376,7 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #'  ('1 hour' is default) by taking the mean.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{vector} of USGS NWIS sites (optional).
-#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
+#' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param options A \link[whitewater]{wwOptions} call.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
@@ -395,7 +395,7 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #'
 ww_floorIVUSGS <- function(procDV,
                           sites = NULL,
-                          parameterCd = NULL,
+                          parameter_cd = NULL,
                           options = wwOptions(),
                           parallel = FALSE, ...) {
 
@@ -408,12 +408,12 @@ ww_floorIVUSGS <- function(procDV,
 
   sites <- unique(procDV$site_no)
   station <- unique(procDV$Station)
-  params <- attr(procDV, 'parameterCd')
-  cols <- attr(procDV, 'parameterCd_names')
+  params <- attr(procDV, 'parameter_cd')
+  cols <- attr(procDV, 'parameter_cd_names')
 
   } else {
 
-  if(is.null(parameterCd)){usethis::ui_stop('need a parameterCd')}
+  if(is.null(parameter_cd)){usethis::ui_stop('need a parameter_cd')}
 
   if(!is.null(sites) & length(sites) == 1){
     sites <- unique(sites)
@@ -435,7 +435,7 @@ ww_floorIVUSGS <- function(procDV,
 
   }
 
-    params <- parameterCd
+    params <- parameter_cd
 
     cols <- name_params_to_update(params)
 
@@ -456,7 +456,7 @@ ww_floorIVUSGS <- function(procDV,
                             furrr::future_map(safely(~iv_USGS(., options = .$options[[1]],
                                                               type = 'hour')), ...) %>%
                             purrr::keep(~length(.) != 0) %>%
-                            purrr::map(~.x[['result']])%>%
+                            purrr::map(~.x[['result']]) %>%
                             purrr::map(~rename_with(., ~gsub(".*_","", .x),
                                        dplyr::ends_with(paste0('_', cols)))) %>%
                             plyr::rbind.fill()
@@ -501,7 +501,7 @@ ww_floorIVUSGS <- function(procDV,
 #' \url{https://waterservices.usgs.gov/nwis/iv/}.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{vector} of USGS NWIS sites. \code{optional}
-#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
+#' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param options A \link[whitewater]{wwOptions} call.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
@@ -519,7 +519,7 @@ ww_floorIVUSGS <- function(procDV,
 #'
 ww_instantaneousUSGS <- function(procDV,
                                  sites = NULL,
-                                 parameterCd = NULL,
+                                 parameter_cd = NULL,
                                  options = wwOptions(),
                                  parallel = FALSE, ...) {
 
@@ -532,12 +532,12 @@ ww_instantaneousUSGS <- function(procDV,
 
     sites <- unique(procDV$site_no)
     station <- unique(procDV$Station)
-    params <- attr(procDV, 'parameterCd')
-    cols <- attr(procDV, 'parameterCd_names')
+    params <- attr(procDV, 'parameter_cd')
+    cols <- attr(procDV, 'parameter_cd_names')
 
   } else {
 
-    if(is.null(parameterCd)){usethis::ui_stop('need a parameterCd')}
+    if(is.null(parameter_cd)){usethis::ui_stop('need a parameter_cd')}
 
     if(!is.null(sites) & length(sites) == 1){
       sites <- unique(sites)
@@ -559,7 +559,7 @@ ww_instantaneousUSGS <- function(procDV,
 
     }
 
-    params <- parameterCd
+    params <- parameter_cd
 
     cols <- name_params_to_update(params)
 
@@ -664,34 +664,59 @@ iv_USGS <- function(data, options, type){
   #remove excess data
   df <- df[-1,]
 
+  df <- df %>% dplyr::mutate(dplyr::across(contains(c('agency_cd', 'site_no', 'datetime')), ~dplyr::na_if(.,"")))
+
   df <- renameNWISColumns(df) %>%
-    select(site_no, datetime, dplyr::contains(data$cols[[1]]))
+        select(site_no, datetime, dplyr::contains(data$cols[[1]]))
   #add metadata
 
   df <- df %>%
-    mutate(Station = paste0(data$station),
-           param_type = paste0('param_',i)) %>%
-    relocate(Station)
+        mutate(Station = paste0(data$station),
+               param_type = paste0('param_',i)) %>%
+        relocate(Station)
 
 
   df_final <- plyr::rbind.fill(df_final, df)
 
   }
 
-  if(nrow(df_final) < 1){
+  if(all(is.na(df_final[,c('site_no', 'datetime')]))){
 
-    cli::cli_alert_warning('{usethis::ui_field(dplyr::slice(data$Station)} ran into an error.')
+    cli::cli_alert_warning('{usethis::ui_field({data$station})} ran into an error (no data for user input).')
 
   } else {
 
+    final_data_logic <- df_final %>%
+                        dplyr::group_by(param_type) %>%
+                        dplyr::summarise(dplyr::across(c('site_no'), ~all(is.na(.))))
+    param_names <- name_params_to_update(final_data_logic[which(final_data_logic['site_no']$site_no == TRUE),]$param_type)
+
+    if(all(isTRUE(final_data_logic[,c('site_no')]$site_no))){
+
+        if(type == 'inst'){
+        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("instantaneous values")} were successfully downloaded.')
+
+        } else if (type == 'hour'){
+        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("floored values")} were successfully downloaded.')
+
+      }
+
+         } else {
+
     if(type == 'inst'){
-    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("instantaneous values")} were successfully downloaded.')
-    } else if (type == 'hour'){
-    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("hourly values")} were successfully downloaded.')
+    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("instantaneous values")} were successfully downloaded.
+                              {crayon::red("(warning)")} Parameter(s) {usethis::ui_value(param_names)} returned no data.')
+
+      } else if (type == 'hour'){
+    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("floored values")} were successfully downloaded.
+                              {crayon::red("(warning)")} Parameter(s) {usethis::ui_value(param_names)} returned no data.')
+
+        }
     }
+
   }
 
-  df_final
+ df_final
 
 }
 
@@ -735,7 +760,7 @@ wwfilterNULL(
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} USGS NWIS site.
 #' @param temporalFilter A \code{character} for the stat summary window, e.g. 'daily' (default), 'monthly', 'yearly'.
-#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
+#' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param days A \code{numeric} input of days to go back from today (only needed if using .temporalFilter = 'daily').
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
@@ -751,25 +776,25 @@ wwfilterNULL(
 ww_statsNWIS <- function(procDV,
                             sites = NULL,
                             temporalFilter = 'daily',
-                            parameterCd = NULL,
+                            parameter_cd = NULL,
                             days = 10,
                             parallel = FALSE, ...) {
 
   switch(temporalFilter,
          'daily' = ww_reportUSGSdv(procDV = procDV,
                                    sites = sites,
-                                   parameterCd = parameterCd,
+                                   parameter_cd = parameter_cd,
                                    days = days,
                                    parallel = parallel,
                                    ...),
          'monthly' = ww_reportUSGSmv(procDV = procDV,
                                      sites = sites,
-                                     parameterCd = parameterCd,
+                                     parameter_cd = parameter_cd,
                                      parallel = parallel,
                                      ...),
          'yearly' = ww_reportUSGSav(procDV = procDV,
                                      sites = sites,
-                                     parameterCd = parameterCd,
+                                     parameter_cd = parameter_cd,
                                      parallel = parallel,
                                      ...))
 }
@@ -780,7 +805,7 @@ ww_statsNWIS <- function(procDV,
 #' function by taking the daily mean of the hourly data. Thus, the instantaneous values will look different than the daily mean values, as it should.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} USGS NWIS site.
-#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
+#' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param days A \code{numeric} input of days.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
@@ -793,12 +818,12 @@ ww_statsNWIS <- function(procDV,
 #'
 ww_reportUSGSdv <- function(procDV,
                             sites = NULL,
-                            parameterCd = NULL,
+                            parameter_cd = NULL,
                             days = 10,
                             parallel = FALSE, ...) {
 
 
-  site_station_days <- prepping_reports(procDV, sites, parameterCd)
+  site_station_days <- prepping_reports(procDV, sites, parameter_cd)
 
   #run over api, pulling necessary data.
 
@@ -869,14 +894,14 @@ usgs_stats_fun <- function(data, type) {
 
   if(nrow(final_data) < 1){
 
-    cli::cli_alert_success('{usethis::ui_field(data$Station)} {usethis::ui_value("no values")} for Temporal Filter ({type}) and parameterCd ({data$params[[1]]}).')
+    cli::cli_alert_success('{usethis::ui_field(data$Station)} {usethis::ui_value("no values")} for Temporal Filter ({type}) and parameter_cd ({data$params[[1]]}).')
 
   } else {
 
     if(length(unique(final_data$parameter_cd)) != length(data$params[[1]])){
 
       cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("NWIS Stat")} for Temporal Filter ({type}) was successfully downloaded.
-                              {crayon::red("(warning)")} parmeterCd {data$params[[1]][which(!(data$params[[1]] %in% unique(final_data$parameter_cd)))]} returned no data for {usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)}.')
+                              {crayon::red("(warning)")} parameter_cd {data$params[[1]][which(!(data$params[[1]] %in% unique(final_data$parameter_cd)))]} returned no data for {usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)}.')
 
     } else {
     cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("NWIS Stat")} for Temporal Filter ({type}) was successfully downloaded.')
@@ -903,7 +928,7 @@ clean_hourly_dv_report <- function(pp, data, days) {
   cols <- pp$cols[[1]]
 
   u_hour <- suppressMessages(ww_floorIVUSGS(sites = pp$sites,
-                       parameterCd = pp$params[[1]],
+                       parameter_cd = pp$params[[1]],
                        options = wwOptions(period = days)))
 
   u_hour <- u_hour %>%
@@ -939,7 +964,7 @@ clean_hourly_dv_report <- function(pp, data, days) {
 #' monthly quantiles are generated similar to \link[whitewater]{ww_reportUSGSdv}.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} USGS NWIS site.
-#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
+#' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #' @return A \code{tibble} with monthly stats.
@@ -949,7 +974,7 @@ clean_hourly_dv_report <- function(pp, data, days) {
 #'
 ww_reportUSGSmv <- function(procDV,
                             sites = NULL,
-                            parameterCd = NULL,
+                            parameter_cd = NULL,
                             parallel = FALSE,
                             ...) {
 
@@ -957,7 +982,7 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 
 
 
-  site_station_days <- prepping_reports(procDV, sites, parameterCd)
+  site_station_days <- prepping_reports(procDV, sites, parameter_cd)
 
   #run over api, pulling necessary data.
 
@@ -985,7 +1010,7 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 
 
     summary_stats <- usgs_statsmv %>%
-                      group_by(Station, month = month_nu) %>%
+                      group_by(Station, parameter_cd, month = month_nu) %>%
                       summarize(p95_va = quantile(mean_va, probs = .95, na.rm = TRUE),
                                 p90_va = quantile(mean_va, probs = .90, na.rm = TRUE),
                                 p80_va = quantile(mean_va, probs = .80, na.rm = TRUE),
@@ -999,7 +1024,8 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
     usgs_statsmv  <-  usgs_statsmv %>%
                       arrange(desc(year_nu)) %>%
                       rename(month = "month_nu", mean_value = "mean_va") %>%
-                      left_join(summary_stats, by = c("month", "Station"))
+                      left_join(summary_stats, by = c("month", "Station", 'parameter_cd')) %>%
+                      dplyr::mutate(date = lubridate::ym(paste(as.character(year_nu),'-', as.character(month))))
 
 
 }
@@ -1009,7 +1035,7 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 #' monthly quantiles are generated similar to \link[whitewater]{ww_reportUSGSdv}.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} USGS NWIS site.
-#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
+#' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
@@ -1020,7 +1046,7 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 #'
 ww_reportUSGSav <- function(procDV,
                             sites = NULL,
-                            parameterCd = NULL,
+                            parameter_cd = NULL,
                             parallel = FALSE,
                             ...) {
 
@@ -1028,7 +1054,7 @@ ww_reportUSGSav <- function(procDV,
 
 
 
-  site_station_days <- prepping_reports(procDV, sites, parameterCd)
+  site_station_days <- prepping_reports(procDV, sites, parameter_cd)
 
   #run over api, pulling necessary data.
 
@@ -1056,7 +1082,7 @@ ww_reportUSGSav <- function(procDV,
 
 
   summary_stats <- usgs_statsav %>%
-    group_by(Station) %>%
+    group_by(Station, parameter_cd) %>%
     summarize(p95_va = quantile(mean_va, probs = .95, na.rm = TRUE),
               p90_va = quantile(mean_va, probs = .90, na.rm = TRUE),
               p80_va = quantile(mean_va, probs = .80, na.rm = TRUE),
@@ -1070,7 +1096,7 @@ ww_reportUSGSav <- function(procDV,
   usgs_statsav  <-  usgs_statsav %>%
     arrange(desc(year_nu)) %>%
     rename(year = "year_nu", mean_value = "mean_va") %>%
-    left_join(summary_stats, by = c("Station")) %>%
+    left_join(summary_stats, by = c("Station", 'parameter_cd')) %>%
     arrange(Station)
 
 
@@ -1079,11 +1105,11 @@ ww_reportUSGSav <- function(procDV,
 #'
 #' @param sites A \code{character} USGS NWIS site.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
-#' @param parameterCd A USGS code parameter code, only if using \code{sites} argument.
+#' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #'
 #' @return A prepped tibblewith  meta data for api call
 #' @noRd
-prepping_reports <- function(procDV, sites, parameterCd){
+prepping_reports <- function(procDV, sites, parameter_cd){
 
 if(is.null(sites)) {sites <- unique(procDV[['site_no']])}
 
@@ -1093,12 +1119,12 @@ if(!missing(procDV)){
 
   sites <- unique(procDV$site_no)
   station <- unique(procDV$Station)
-  params <- attr(procDV, 'parameterCd')
-  cols <- attr(procDV, 'parameterCd_names')
+  params <- attr(procDV, 'parameter_cd')
+  cols <- attr(procDV, 'parameter_cd_names')
 
 } else {
 
-  if(is.null(parameterCd)){usethis::ui_stop('need a parameterCd')}
+  if(is.null(parameter_cd)){usethis::ui_stop('need a parameter_cd')}
 
   if(!is.null(sites) & length(sites) == 1){
     sites <- unique(sites)
@@ -1120,7 +1146,7 @@ if(!missing(procDV)){
 
   }
 
-  params <- parameterCd
+  params <- parameter_cd
 
   cols <- name_params_to_update(params)
 
@@ -1242,14 +1268,15 @@ cols_to_update <- function(data){
 
 #' Get paramCd names
 #'
-#' @param x vector of parameterCd
+#' @param x vector of parameter_cd
 #' @return A vector of length 1 or n, matching the length of the logical input or output vectors.
 #' @noRd
 #'
 name_params_to_update <- function(x){
 
 
-  param_names <- dplyr::case_when(x == "00010" ~ "Wtemp",
+  param_names <- dplyr::case_when(
+                   x == "00010" ~ "Wtemp",
                    x == "00045" ~ "Precip",
                    x == "00060" ~ "Flow",
                    x == "00065" ~ "GH",
