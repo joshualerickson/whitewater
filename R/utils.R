@@ -45,7 +45,7 @@ waterYear <- function(x, wy_month = 10, numeric=FALSE) {
 dt_to_tibble <- function(data) {
 
   class(data) <- 'data.frame'
-  data <- tibble::tibble(data)
+  data <- dplyr::tibble(data)
 
 }
 

@@ -7,7 +7,7 @@ Authors@R:
            role = c('aut', 'cre'),
            email = "joshualerickson@gmail.com"
            )
-Description: Provides methods for getting water data.
+Description: Provides methods for getting water data using sequential and parallel processing.
 URL: https://github.com/joshualerickson/whitewater/
 BugReports: https://github.com/joshualerickson/whitewater/issues/
 License: MIT + file LICENSE
@@ -15,22 +15,19 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Imports: 
+    dataRetrieval,
     dplyr,
+    cli,
+    crayon,
     furrr,
     httr,
-    jsonlite,
     plyr,
     purrr,
-    Rdpack,
     stringr,
     usethis,
-    ape,
     lubridate,
     readr,
-    tidyr,
-    cli,
-    dataRetrieval,
-    crayon
+    tidyr
 Suggests: 
     ggplot2,
     magrittr,
@@ -40,4 +37,4 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Depends: 
-    R (>= 2.10)
+    R (>= 3.4.0)

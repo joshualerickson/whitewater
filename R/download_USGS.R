@@ -94,6 +94,7 @@ ww_dvUSGS <- function(sites,
 #' @param end_date A character of date format, e.g. \code{"1990-09-01"}
 #' @param stat_cd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
 #'
+#' @importFrom crayon red
 #' @noRd
 #' @return A tidied data frame with gage meta-data.
 prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd) {
@@ -256,7 +257,6 @@ if(missing(procDV)) {
 #' @importFrom tidyr pivot_wider
 #' @importFrom lubridate parse_date_time ymd
 #' @importFrom stringr str_c
-#' @importFrom ape where
 #'
 ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 
@@ -947,7 +947,7 @@ clean_hourly_dv_report <- function(pp, data, days) {
 
   for(i in 0:days){
     time <- lubridate::date(Sys.time()) - i
-    time <- time %>% paste(month(.), mday(.), sep = "-") %>% str_remove("...........")
+    time <- time %>% paste(month(.), mday(.), sep = "-") %>% stringr::str_remove("...........")
     t <- append(t, time)
   }
 
@@ -1107,7 +1107,7 @@ ww_reportUSGSav <- function(procDV,
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #'
-#' @return A prepped tibblewith  meta data for api call
+#' @return A prepped tibble with  meta data for api call
 #' @noRd
 prepping_reports <- function(procDV, sites, parameter_cd){
 
@@ -1206,7 +1206,7 @@ pad_zero_for_logging <- function(data){
   cols_to_update <- names(data[which(names(data) %in% param_names)])
 
    data %>%
-    mutate(across(cols_to_update, ~ifelse(.x <= 0 , .x + 0.000001, .x)))
+    mutate(across(dplyr::all_of(cols_to_update), ~ifelse(.x <= 0 , .x + 0.000001, .x)))
 }
 
 

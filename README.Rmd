@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 
-The goal of whitewater is to provide chunk-based parallelism for water relevant APIs (USGS, NRCS, NWS). 
+The goal of whitewater is to provide sequential and parallel processing for USGS stations in a tidy-style format. 
 
 ## Installation
 
@@ -33,12 +33,22 @@ devtools::install_github("joshualerickson/whitewater")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem: get minimum flows per water year.
+This is a basic example which shows you how to solve a common problem: get minimum flows per water year for multiple sites using parallel processing. Please see [furrr](https://cran.r-project.org/web/packages/furrr/index.html) and [future](https://cran.r-project.org/web/packages/future/index.html) for more details on parallel processing methods.  
 
-```{r example}
+### Running in parallel  
+
+```{r}
 library(whitewater)
 library(ggplot2)
-## basic example code
+library(future)
+
+#need to call future::plan()
+plan(multisession(workers = workersAvailable()-1))
+
+```
+
+
+```{r example}
 
 yaak_min <- ww_wyUSGS(sites = '12304500')
 
