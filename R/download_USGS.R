@@ -390,7 +390,7 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #' @export
 #' @importFrom lubridate ymd_hm floor_date
 #' @importFrom dplyr mutate rename rename_with group_by mutate relocate summarise ungroup contains
-#' @importFrom dataRetrieval renameNWISColumns readNWISsite
+#' @importFrom dataRetrieval renameNWISColumns readNWISsite setAccess
 #' @importFrom httr GET write_disk http_error
 #'
 ww_floorIVUSGS <- function(procDV,
