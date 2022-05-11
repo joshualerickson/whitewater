@@ -33,20 +33,91 @@ devtools::install_github("joshualerickson/whitewater")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem: get minimum flows per water year for multiple sites using parallel processing. Please see [furrr](https://cran.r-project.org/web/packages/furrr/index.html) and [future](https://cran.r-project.org/web/packages/future/index.html) for more details on parallel processing methods.  
+This is a basic example which shows you how to solve a common problem: get daily values of discharge for multiple sites (all active sites in Pacific Northwest (Region 17)) using parallel processing. Please see [furrr](https://cran.r-project.org/web/packages/furrr/index.html) and [future](https://cran.r-project.org/web/packages/future/index.html) for more details on parallel processing methods.  
 
 ### Running in parallel  
 
-```{r}
+```{r, warning=F, message=F}
 library(whitewater)
-library(ggplot2)
+library(tidyverse)
+library(sf)
 library(future)
 
-#need to call future::plan()
-plan(multisession(workers = workersAvailable()-1))
+huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
+                                           siteStatus = 'active',
+                                           service = 'dv',
+                                           parameterCd = '00060')
 
+st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>% 
+  ggplot() + 
+  geom_sf() +
+  borders('state', xlim = c(-130, -110), ylim = c(20, 50)) + 
+  theme_bw()
 ```
 
+
+```{r}
+#need to call future::plan()
+plan(multisession(workers = availableCores()-1))
+
+#running on 11 cores
+
+system.time({
+pnw_dv <- suppressMessages(ww_dvUSGS(huc17_sites$site_no,
+                    parameter_cd = '00060',
+                    wy_month = 10,
+                    parallel = TRUE))
+})
+```
+
+Now we can use other `ww_` functions to filter the data by water year, month, water year and month, as well as stat reporting (percentiles comparing current readings).   
+
+### Water Year  
+
+Same as above, we can just call `parallel = TRUE` to run in parallel since we'll be getting peak flows from `dataRetrieval::readNWISpeak()`.  
+```{r}
+system.time({
+pnw_wy <- suppressWarnings(suppressMessages(ww_wyUSGS(pnw_dv,
+                                     parallel = TRUE)))
+})
+```
+
+```{r, echo=F}
+pnw_wy %>% 
+  group_by(site_no) %>% 
+  add_count() %>% 
+  filter(n > 10) %>% 
+  nest() %>% 
+  mutate(model = map(data, ~broom::tidy(lm(.$Flow_coef_var~.$wy, data = .))[2,2])) %>% 
+  unnest() %>% ungroup() %>% 
+  mutate(est_cut = cut_interval(estimate, n = 6)) %>% 
+  ggplot(aes(wy, Flow_coef_var)) + 
+  stat_smooth(geom = 'line',
+              aes(group = site_no, color = estimate),
+              method = 'lm', se = F) +
+  scale_color_gradientn(colors = hcl.colors('Zissou1', n = 11)) +
+  theme_bw() + 
+  facet_wrap(~est_cut)
+  
+pnw_wy %>% 
+  group_by(site_no) %>% 
+  add_count() %>% 
+  filter(n > 10) %>% 
+  nest() %>% 
+  mutate(model = map(data, ~broom::tidy(lm(.$Flow_coef_var~.$wy, data = .))[2,2])) %>% 
+  unnest() %>% ungroup() %>% left_join(pnw_dv %>% group_by(site_no) %>% 
+                                         dplyr::select(site_no, lat, long) %>% 
+                                         slice(n=1), by = 'site_no') %>% 
+  st_as_sf(coords = c('long', 'lat')) %>% 
+  ggplot() + 
+  geom_sf(aes(color = estimate))+
+  scale_color_gradientn(colors = hcl.colors('Zissou1', n = 11)) +
+  theme_bw()
+```
+
+### Without using parallel  
+
+If you just want a single site, go for it!  
 
 ```{r example}
 
@@ -57,6 +128,7 @@ ggplot(yaak_min, aes(wy, Flow_min)) +
   geom_line() +
   theme_bw()
 ```
+
 ### Or minimum/maximum water temperature
 
 ```{r}
