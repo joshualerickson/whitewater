@@ -30,7 +30,6 @@ Imports:
     tidyr
 Suggests: 
     ggplot2,
-    magrittr,
     covr,
     rmarkdown,
     knitr,
