@@ -3,7 +3,7 @@
 #'
 #'Create an ordered factor or numeric values from a vector of dates based on
 #'the water year.
-#'
+#' @noRd
 #' @param x an object of class "Date" or "POSIXt." Missing values are permitted and
 #'result in corresponding missing values in the output.
 #' @param wy_month A numeric indicating the month the water year begins.
@@ -40,7 +40,7 @@ waterYear <- function(x, wy_month = 10, numeric=FALSE) {
 #' Convert dt to tibble
 #'
 #' @param data a data.frame and data.table
-#'
+#' @noRd
 #' @return a tibble df
 dt_to_tibble <- function(data) {
 
@@ -52,7 +52,7 @@ dt_to_tibble <- function(data) {
 #' all na
 #' @description Remove columns with all NA's
 #' @param x a data.frame
-#'
+#' @noRd
 all_na <- function(x){
   any(!is.na(x))
 }

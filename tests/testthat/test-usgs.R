@@ -200,3 +200,13 @@ test_that("water year", {
   )
 
 })
+
+
+test_that('wwOptions', {
+
+  yaak_river_dv <- ww_dvUSGS('12304500')
+
+  yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
+                                  options = wwOptions(date_range = 'date_range',
+                                  dates = c('2022-03-01', '2022-05-11')))
+})

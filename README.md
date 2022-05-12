@@ -65,7 +65,10 @@ pnw_dv <- suppressMessages(ww_dvUSGS(huc17_sites$site_no,
                     parallel = TRUE))
 })
 #>    user  system elapsed 
-#>   36.14    2.41  259.94
+#>   33.51    2.37  304.06
+
+nrow(pnw_dv)
+#> [1] 15400639
 ```
 
 Now we can use other `ww_` functions to filter the data by water year,
@@ -83,20 +86,10 @@ pnw_wy <- suppressWarnings(suppressMessages(ww_wyUSGS(pnw_dv,
                                      parallel = TRUE)))
 })
 #>    user  system elapsed 
-#>   15.51    0.50   71.64
+#>   14.53    0.77   72.48
 ```
 
-    #> Warning: `cols` is now required when using unnest().
-    #> Please use `cols = c(data, model)`
-    #> `geom_smooth()` using formula 'y ~ x'
-    #> Warning: Removed 128 rows containing non-finite values (stat_smooth).
-
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
-
-    #> Warning: `cols` is now required when using unnest().
-    #> Please use `cols = c(data, model)`
-
-<img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
 
 ### Without using parallel
 
