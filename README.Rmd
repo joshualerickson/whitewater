@@ -43,11 +43,14 @@ library(whitewater)
 library(tidyverse)
 library(sf)
 library(future)
+library(dataRetrieval)
 
 huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
                                            siteStatus = 'active',
                                            service = 'dv',
-                                           parameterCd = '00060')
+                                           parameterCd = '00060',
+                                           drainAreaMax = 2000)
+cat("# of sites: ", nrow(huc17_sites))
 
 st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>% 
   ggplot() + 
@@ -120,9 +123,9 @@ p2 <- pnw_wy %>%
 
 library(patchwork)
 (p2|p1 + theme(legend.position = 'bottom', legend.margin = margin(l = -10, unit='cm'))) +
-  plot_annotation(title = 'Mann-Kendall trend analysis (Peak Flow) with active USGS sites in Region 17', subtitle =  '10 years or more of data')
+  plot_annotation(title = 'Mann-Kendall trend analysis (Peak Flow) with active USGS sites in Region 17', subtitle =  '10 years or more of data and drainage area < 2,000 km2')
 
- pnw_wy %>% 
+p1 <-  pnw_wy %>% 
   group_by(site_no) %>% 
   filter(!is.na(peak_va)) %>% 
   add_count() %>% 
@@ -145,17 +148,42 @@ library(patchwork)
    theme_bw() + 
    scale_y_continuous(labels = scales::comma) +
   facet_wrap(~cut_q, scales = 'free') + 
-   labs(title ='Sites with (p <= 0.05) and slope of linear model as color', 
-        color = 'Slope (beta)', y = 'Peak Flows (cfs)',
-        subtitle = 'faceted by all-time mean peak flow')
+   labs(color = 'Slope (beta)', y = 'Peak Flows (cfs)')
  
+p2 <- pnw_wy %>% 
+  group_by(site_no) %>% 
+  filter(!is.na(peak_va)) %>% 
+  add_count() %>% 
+  filter( n > 10) %>% 
+  nest() %>% 
+  mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va))['p.value'])) %>% 
+  unnest() %>% 
+   filter(p.value <= 0.05) %>% 
+   group_by(Station) %>% 
+   mutate(mean_q = mean(peak_va, na.rm = T)) %>% 
+  nest() %>% 
+  mutate(model = map(data, ~broom::tidy(lm(.$Flow_coef_var~.$wy, data = .))[2,2])) %>% 
+  unnest() %>% ungroup() %>% 
+   mutate(cut_q = cut_number(mean_q, n = 6),
+          slope_col = if_else(estimate < 0, 'decrease', 'increase'))%>% 
+  group_by(site_no) %>% slice(n=1) %>% left_join(pnw_dv %>% group_by(site_no) %>% 
+                                         dplyr::select(site_no, lat, long) %>% 
+                                         slice(n=1), by = 'site_no') %>% 
+  st_as_sf(coords = c('long', 'lat')) %>% 
+  ggplot() + 
+  geom_sf(aes(color = slope_col), show.legend = F, size = 1)+
+  borders('state', xlim = c(-130, -110), ylim = c(20, 50)) + 
+  theme_bw()
+
+(p2|p1 + theme(legend.position = 'bottom', legend.margin = margin(l = -10, unit='cm'))) +
+  plot_annotation(title = 'Sites with (p <= 0.05) and slope of linear model as color',
+        subtitle = 'faceted by all-time mean peak flow')
 
 ```
 
-
 ### Without using parallel  
 
-If you just want a single site, go for it!  
+If you just want a single site, go for it! You don't always have to pipe a `ww_dvUSGS()` object into the `ww_*()` and can just use the `sites` argument. IMO its nice to have a `ww_dvUSGS()` object because you'll likely come back to it.  
 
 ```{r example}
 

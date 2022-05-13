@@ -26,3 +26,15 @@ generate mean, maximum, median, standard deviation and coefficient of variation 
 If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
 provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
 }
+\examples{
+\dontrun{
+
+library(whitewater)
+yaak_river_dv <- ww_dvUSGS('12304500',
+parameter_cd = '00060',
+wy_month = 10)
+
+yaak_river_month <- ww_monthUSGS(yaak_river_dv)
+
+}
+}

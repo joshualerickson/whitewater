@@ -42,3 +42,31 @@ added variables like water year, lat/lon, station name, altitude and tidied date
 \note{
 Use it the same way you would use \link[dataRetrieval]{readNWISdv}.
 }
+\examples{
+\dontrun{
+
+library(whitewater)
+yaak_river_dv <- ww_dvUSGS('12304500',
+parameter_cd = '00060',
+wy_month = 10)
+
+#parallel
+
+#get sites
+
+huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
+siteStatus = 'active',
+service = 'dv',
+parameterCd = '00060')
+
+library(future)
+#need to call future::plan()
+plan(multisession(workers = availableCores()-1))
+
+pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
+parameter_cd = '00060',
+wy_month = 10,
+parallel = TRUE)
+
+}
+}

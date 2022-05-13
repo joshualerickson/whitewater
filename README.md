@@ -37,11 +37,15 @@ library(whitewater)
 library(tidyverse)
 library(sf)
 library(future)
+library(dataRetrieval)
 
 huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
                                            siteStatus = 'active',
                                            service = 'dv',
-                                           parameterCd = '00060')
+                                           parameterCd = '00060',
+                                           drainAreaMax = 2000)
+cat("# of sites: ", nrow(huc17_sites))
+#> # of sites:  677
 
 st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>% 
   ggplot() + 
@@ -65,10 +69,10 @@ pnw_dv <- suppressMessages(ww_dvUSGS(huc17_sites$site_no,
                     parallel = TRUE))
 })
 #>    user  system elapsed 
-#>   33.51    2.37  304.06
+#>   35.97    2.81  258.45
 
 nrow(pnw_dv)
-#> [1] 15400639
+#> [1] 11680978
 ```
 
 Now we can use other `ww_` functions to filter the data by water year,
@@ -86,14 +90,17 @@ pnw_wy <- suppressWarnings(suppressMessages(ww_wyUSGS(pnw_dv,
                                      parallel = TRUE)))
 })
 #>    user  system elapsed 
-#>   14.53    0.77   72.48
+#>   16.07    0.78   84.90
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
 
 ### Without using parallel
 
-If you just want a single site, go for it!
+If you just want a single site, go for it! You don’t always have to pipe
+a `ww_dvUSGS()` object into the `ww_*()` and can just use the `sites`
+argument. IMO its nice to have a `ww_dvUSGS()` object because you’ll
+likely come back to it.
 
 ``` r
 yaak_min <- ww_wyUSGS(sites = '12304500')

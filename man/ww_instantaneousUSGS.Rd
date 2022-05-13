@@ -38,3 +38,51 @@ For performance reasons, with multi-site retrievals you may
 retrieve data since October 1, 2007 only. If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
 provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
 }
+\examples{
+\dontrun{
+
+library(whitewater)
+yaak_river_dv <- ww_dvUSGS('12304500',
+parameter_cd = '00060',
+wy_month = 10)
+
+yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv)
+
+#change number of days
+
+yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv,
+                                options = wwOptions(period = 365))
+
+# get by date range
+
+yaak_river_wy <- ww_instantaneousUSGS(yaak_river_dv,
+                                options = wwOptions(date_range = 'date_range',
+                                                    dates = c('2022-03-01', '2022-05-11')))
+
+# get most recent
+
+yaak_river_wy <- ww_instantaneousUSGS(yaak_river_dv,
+                                options = wwOptions(date_range = 'recent')))
+
+#parallel
+
+#get sites
+
+huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
+siteStatus = 'active',
+service = 'dv',
+parameterCd = '00060')
+
+library(future)
+#need to call future::plan()
+plan(multisession(workers = availableCores()-1))
+
+pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
+parameter_cd = '00060',
+wy_month = 10,
+parallel = TRUE)
+
+pnw_iv <- ww_instantaneousUSGS(pnw_dv,
+                    parallel = TRUE)
+}
+}

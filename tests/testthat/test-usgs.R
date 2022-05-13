@@ -153,7 +153,7 @@ test_that('two sites two params reports using main function', {
   usgs_dv <- usgs_dv(sites=c("02319394", "12304500"),
                      parameter_cd = c("00010", "00060"))
 
-  usgs_report <- purrr::quietly(ww_statsNWIS)
+  usgs_report <- purrr::quietly(ww_statsUSGS)
 
   #daily
   usgs_reportdv <- usgs_report(usgs_dv$result, days = 11)
@@ -202,11 +202,47 @@ test_that("water year", {
 })
 
 
-test_that('wwOptions', {
+test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
 
   yaak_river_dv <- ww_dvUSGS('12304500')
 
   yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
                                   options = wwOptions(date_range = 'date_range',
                                   dates = c('2022-03-01', '2022-05-11')))
+  expect_equal(nrow(yaak_river_iv), 1704)
+
+  #change the floor value
+
+  yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
+                                  options = wwOptions(date_range = 'date_range',
+                                                      dates = c('2022-03-01', '2022-05-11'),
+                                                      floor_iv = '2-hour'))
+  expect_equal(nrow(yaak_river_iv), 853)
+
+  #get recent
+
+  yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
+                                  options = wwOptions(date_range = 'recent'))
+
+  expect_equal(nrow(yaak_river_iv), 1)
+
+
+  # should only return one since date_range is 'recent'
+
+  yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv,
+                                        options = wwOptions(date_range = 'recent',
+                                                            dates = c('2022-03-01', '2022-05-11'),
+                                                            floor_iv = '2-hour'))
+
+  expect_equal(nrow(yaak_river_iv), 1)
+
+  yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv,
+                                        options = wwOptions(date_range = 'date_range',
+                                                            dates = c('2022-03-01', '2022-05-11'),
+                                                            floor_iv = '2-hour'))
+
+  expect_equal(nrow(yaak_river_iv), 6813)
+
+
+
 })

@@ -12,10 +12,37 @@
 #' @param wy_month \code{numeric} indicating the start month of the water year. e.g. 10 (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
+#'
 #' @note Use it the same way you would use \link[dataRetrieval]{readNWISdv}.
 #' @return A \code{tibble} with daily metrics and added meta-data.
 #' @export
 #'
+#' @examples \dontrun{
+#'
+#' library(whitewater)
+#' yaak_river_dv <- ww_dvUSGS('12304500',
+#' parameter_cd = '00060',
+#' wy_month = 10)
+#'
+#' #parallel
+#'
+#' #get sites
+#'
+#' huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
+#' siteStatus = 'active',
+#' service = 'dv',
+#' parameterCd = '00060')
+#'
+#' library(future)
+#' #need to call future::plan()
+#' plan(multisession(workers = availableCores()-1))
+#'
+#' pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
+#' parameter_cd = '00060',
+#' wy_month = 10,
+#' parallel = TRUE)
+#'
+#' }
 #' @importFrom dataRetrieval readNWISdv renameNWISColumns readNWISsite
 #' @importFrom dplyr select left_join "%>%"
 #' @importFrom purrr safely
@@ -158,10 +185,42 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
 #' @return A \code{tibble} filtered by water year with added meta-data.
 #' @export
 #'
+#' @examples \dontrun{
+#'
+#' library(whitewater)
+#' yaak_river_dv <- ww_dvUSGS('12304500',
+#' parameter_cd = '00060',
+#' wy_month = 10)
+#'
+#' yaak_river_wy <- ww_wyUSGS(yaak_river_dv)
+#'
+#' #parallel
+#'
+#' #get sites
+#'
+#' huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
+#' siteStatus = 'active',
+#' service = 'dv',
+#' parameterCd = '00060')
+#'
+#' library(future)
+#' #need to call future::plan()
+#' plan(multisession(workers = availableCores()-1))
+#'
+#' pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
+#' parameter_cd = '00060',
+#' wy_month = 10,
+#' parallel = TRUE)
+#'
+#' pnw_wy <- ww_wyUSGS(pnw_dv,
+#'                     parallel = TRUE)
+#' }
+#'
 #' @importFrom lubridate year month day
 #' @importFrom dplyr mutate filter group_by summarise slice_head ungroup everything row_number n
 #' @importFrom stringr str_c str_remove_all
 #' @importFrom stats median sd
+#'
 ww_wyUSGS <- function(procDV,
                       sites = NULL,
                       parallel = FALSE,
@@ -253,6 +312,17 @@ if(missing(procDV)) {
 #' @return A \code{tibble} filtered by water year and month with added meta-data.
 #' @export
 #'
+#' @examples \dontrun{
+#'
+#' library(whitewater)
+#' yaak_river_dv <- ww_dvUSGS('12304500',
+#' parameter_cd = '00060',
+#' wy_month = 10)
+#'
+#' yaak_river_wym <- ww_wymUSGS(yaak_river_dv)
+#'
+#' }
+#'
 #' @importFrom dplyr group_by mutate across summarise rename right_join ungroup n
 #' @importFrom tidyr pivot_wider
 #' @importFrom lubridate parse_date_time ymd
@@ -320,6 +390,16 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #' provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
 #' @return A \code{tibble} filtered by month and added meta-data.
 #' @export
+#' @examples \dontrun{
+#'
+#' library(whitewater)
+#' yaak_river_dv <- ww_dvUSGS('12304500',
+#' parameter_cd = '00060',
+#' wy_month = 10)
+#'
+#' yaak_river_month <- ww_monthUSGS(yaak_river_dv)
+#'
+#' }
 #' @importFrom dplyr group_by summarise mutate relocate
 #'
 #'
@@ -386,7 +466,54 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #' retrieve data since October 1, 2007 only. If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
 #' provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
 #' @return A \code{tibble} with a user defined interval time step.
+#' @examples \dontrun{
 #'
+#' library(whitewater)
+#' yaak_river_dv <- ww_dvUSGS('12304500',
+#' parameter_cd = '00060',
+#' wy_month = 10)
+#'
+#' yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv)
+#'
+#' #change floor method
+#'
+#' yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
+#'                                 options = wwOptions(floor_iv = '6-hour'))
+#'
+#' #change number of days
+#'
+#' yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
+#'                                 options = wwOptions(floor_iv = '2-hour',
+#'                                                     period = 365))
+#'
+#' # get by date range
+#'
+#'
+#' yaak_river_wy <- ww_floorIVUSGS(yaak_river_dv,
+#'                                 options = wwOptions(date_range = 'date_range',
+#'                                                     dates = c('2022-03-01', '2022-05-11')))
+#'
+#' #parallel
+#'
+#' #get sites
+#'
+#' huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
+#' siteStatus = 'active',
+#' service = 'dv',
+#' parameterCd = '00060')
+#'
+#' library(future)
+#' #need to call future::plan()
+#' plan(multisession(workers = availableCores()-1))
+#'
+#' pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
+#' parameter_cd = '00060',
+#' wy_month = 10,
+#' parallel = TRUE)
+#'
+#' pnw_iv <- ww_floorIVUSGS(pnw_dv,
+#'                     parallel = TRUE)
+#' }
 #' @export
 #' @importFrom lubridate ymd_hm floor_date
 #' @importFrom dplyr mutate rename rename_with group_by mutate relocate summarise ungroup contains
@@ -512,6 +639,52 @@ ww_floorIVUSGS <- function(procDV,
 #' @return A \code{tibble} with instantaneous values.
 #' @export
 #'
+#' @examples \dontrun{
+#'
+#' library(whitewater)
+#' yaak_river_dv <- ww_dvUSGS('12304500',
+#' parameter_cd = '00060',
+#' wy_month = 10)
+#'
+#' yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv)
+#'
+#' #change number of days
+#'
+#' yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv,
+#'                                 options = wwOptions(period = 365))
+#'
+#' # get by date range
+#'
+#' yaak_river_wy <- ww_instantaneousUSGS(yaak_river_dv,
+#'                                 options = wwOptions(date_range = 'date_range',
+#'                                                     dates = c('2022-03-01', '2022-05-11')))
+#'
+#' # get most recent
+#'
+#' yaak_river_wy <- ww_instantaneousUSGS(yaak_river_dv,
+#'                                 options = wwOptions(date_range = 'recent')))
+#'
+#' #parallel
+#'
+#' #get sites
+#'
+#' huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
+#' siteStatus = 'active',
+#' service = 'dv',
+#' parameterCd = '00060')
+#'
+#' library(future)
+#' #need to call future::plan()
+#' plan(multisession(workers = availableCores()-1))
+#'
+#' pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
+#' parameter_cd = '00060',
+#' wy_month = 10,
+#' parallel = TRUE)
+#'
+#' pnw_iv <- ww_instantaneousUSGS(pnw_dv,
+#'                     parallel = TRUE)
+#' }
 #' @importFrom lubridate ymd_hm floor_date
 #' @importFrom dplyr mutate rename rename_with group_by mutate relocate summarise ungroup contains
 #' @importFrom dataRetrieval renameNWISColumns readNWISsite
@@ -617,7 +790,7 @@ ww_instantaneousUSGS <- function(procDV,
 
   usgs_download_inst <- usgs_download_inst %>% dplyr::filter(!is.na(date))
 }
-#' Prep USGS Istantaneous
+#' Prep USGS Instantaneous
 #'
 #' @param data the original data.frame
 #' @param options a list of API arguments
@@ -737,6 +910,42 @@ iv_USGS <- function(data, options, type){
 #'
 #' @return A list with API options.
 #' @export
+#' @examples \dontrun{
+#'
+#' library(whitewater)
+#' yaak_river_dv <- ww_dvUSGS('12304500',
+#' parameter_cd = '00060',
+#' wy_month = 10)
+#'
+#' yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv)
+#'
+#' #change floor method
+#'
+#' yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
+#'                                 options = wwOptions(floor_iv = '6-hour'))
+#'
+#' #change number of days
+#'
+#' yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
+#'                                 options = wwOptions(floor_iv = '2-hour',
+#'                                                     period = 365))
+#'
+#' # get by date range
+#'
+#'
+#' yaak_river_wy <- ww_floorIVUSGS(yaak_river_dv,
+#'                                 options = wwOptions(date_range = 'date_range',
+#'                                                     dates = c('2022-03-01', '2022-05-11')))
+#'
+#'
+#' # site status as 'active'
+#'
+#' yaak_river_wy <- ww_floorIVUSGS(yaak_river_dv,
+#'                                 options = wwOptions(site_status = 'active',
+#'                                                     date_range = 'date_range',
+#'                                                     dates = c('2022-03-01', '2022-05-11')))
+#' }
+
 wwOptions <- function(date_range = 'pfn',
                        period = 11,
                        dates = NULL,
@@ -754,7 +963,7 @@ wwfilterNULL(
 )
 }
 
-#' NWIS stats
+#' USGS stats
 #' @description This function uses the \link[dataRetrieval]{readNWISstat} to gather daily
 #' statistics like quantiles/percentiles.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
@@ -772,8 +981,25 @@ wwfilterNULL(
 #' @importFrom lubridate mday
 #' @importFrom dplyr tibble
 #' @export
+#' @examples \dontrun{
+#' # get by date range
 #'
-ww_statsNWIS <- function(procDV,
+#' yaak_river_dv <- ww_dvUSGS('12304500')
+#'
+#' #daily
+#' yaak_river_stats <- ww_statsUSGS(yaak_river_dv,
+#'                                  temporalFilter = 'daily',
+#'                                  days = 10)
+#' #monthly
+#' yaak_river_stats <- ww_statsUSGS(yaak_river_dv,
+#'                                  temporalFilter = 'monthly',
+#'                                  days = 10)
+#' #yearly
+#' yaak_river_stats <- ww_statsUSGS(yaak_river_dv,
+#'                                  temporalFilter = 'yearly',
+#'                                  days = 10)
+#'}
+ww_statsUSGS <- function(procDV,
                             sites = NULL,
                             temporalFilter = 'daily',
                             parameter_cd = NULL,
@@ -853,7 +1079,9 @@ ww_reportUSGSdv <- function(procDV,
 
 
   final_data <- clean_hourly_dv_report(pp = site_station_days,
-                                       data = usgs_statsdv, days = days)
+                                       data = usgs_statsdv,
+                                       days = days,
+                                       parallel = parallel)
 
   final_data
 
@@ -918,18 +1146,20 @@ usgs_stats_fun <- function(data, type) {
 #' @param pp a parameter names
 #' @param data data original
 #' @param days number of days back
+#' @param ... args to pass to ww_floorIVUSGS
 #'
 #' @return a data.frame
 #' @noRd
 #'
-clean_hourly_dv_report <- function(pp, data, days) {
+clean_hourly_dv_report <- function(pp, data, days, ...) {
 
 
   cols <- pp$cols[[1]]
 
   u_hour <- suppressMessages(ww_floorIVUSGS(sites = pp$sites,
                        parameter_cd = pp$params[[1]],
-                       options = wwOptions(period = days)))
+                       options = wwOptions(period = days),
+                       ...))
 
   u_hour <- u_hour %>%
     mutate(Date = lubridate::as_date(date),
