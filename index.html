@@ -146,10 +146,32 @@
                     parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>
 <span class="op">}</span><span class="op">)</span>
 <span class="co">#&gt;    user  system elapsed </span>
-<span class="co">#&gt;   26.23    1.95  193.35</span>
+<span class="co">#&gt;   29.37    2.05  214.42</span>
 
 <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pnw_dv</span><span class="op">)</span>
-<span class="co">#&gt; [1] 11681517</span></code></pre></div>
+<span class="co">#&gt; [1] 11681517</span>
+
+<span class="va">pnw_dv</span>
+<span class="co">#&gt; # A tibble: 11,681,517 x 24</span>
+<span class="co">#&gt;    agency_cd site_no  Date        Flow Flow_cd drainage_area Station   lat  long</span>
+<span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;    &lt;date&gt;     &lt;dbl&gt; &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;</span>
+<span class="co">#&gt;  1 USGS      10396000 1911-04-01   160 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt;  2 USGS      10396000 1911-04-02   166 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt;  3 USGS      10396000 1911-04-03   173 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt;  4 USGS      10396000 1911-04-04   180 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt;  5 USGS      10396000 1911-04-05   187 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt;  6 USGS      10396000 1911-04-06   232 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt;  7 USGS      10396000 1911-04-07   207 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt;  8 USGS      10396000 1911-04-08   182 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt;  9 USGS      10396000 1911-04-09   157 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt; 10 USGS      10396000 1911-04-10   132 A                 200 DONNER~  42.8 -119.</span>
+<span class="co">#&gt; # ... with 11,681,507 more rows, and 15 more variables: altitude &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   STILLING.WELL_Flow &lt;dbl&gt;, STILLING.WELL_Flow_cd &lt;chr&gt;,</span>
+<span class="co">#&gt; #   .Estimated.By.Regression._Flow &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   .Estimated.By.Regression._Flow_cd &lt;chr&gt;, ..2.._Flow &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   ..2.._Flow_cd &lt;chr&gt;, .Discharge.1921.to.1952._Flow &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   .Discharge.1921.to.1952._Flow_cd &lt;chr&gt;, year &lt;dbl&gt;, month &lt;dbl&gt;, day &lt;int&gt;,</span>
+<span class="co">#&gt; #   month_day &lt;chr&gt;, wy &lt;int&gt;, month_abb &lt;fct&gt;</span></code></pre></div>
 <p>Now we can use other <code>ww_</code> functions to filter the data by water year, month, water year and month, as well as stat reporting (percentiles comparing current readings).</p>
 </div>
 <div class="section level3">
@@ -162,44 +184,345 @@
                                      parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
 <span class="op">}</span><span class="op">)</span>
 <span class="co">#&gt;    user  system elapsed </span>
-<span class="co">#&gt;   11.28    0.58   70.97</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-5-1.png" width="75%" style="display: block; margin: auto;"><img src="reference/figures/README-unnamed-chunk-5-2.png" width="75%" style="display: block; margin: auto;"><img src="reference/figures/README-unnamed-chunk-5-3.png" width="75%" style="display: block; margin: auto;"></p>
+<span class="co">#&gt;   13.16    0.57   66.72</span>
+
+<span class="va">pnw_wy</span>
+<span class="co">#&gt; # A tibble: 32,650 x 20</span>
+<span class="co">#&gt;    Station          site_no    wy peak_va peak_dt    Flow_max Flow_min Flow_mean</span>
+<span class="co">#&gt;    &lt;chr&gt;            &lt;chr&gt;   &lt;int&gt;   &lt;dbl&gt; &lt;date&gt;        &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;</span>
+<span class="co">#&gt;  1 ABIQUA CREEK AT~ 142007~  2014      NA NA              123  3.4 e-1      25.6</span>
+<span class="co">#&gt;  2 ABIQUA CREEK AT~ 142007~  2015    3330 2014-12-21     2400  8.5 e-1     199. </span>
+<span class="co">#&gt;  3 ABIQUA CREEK AT~ 142007~  2016    5980 2015-12-07     3230  7   e-1     318. </span>
+<span class="co">#&gt;  4 ABIQUA CREEK AT~ 142007~  2017    3740 2017-03-09     2390  1.05e+0     405. </span>
+<span class="co">#&gt;  5 ABIQUA CREEK AT~ 142007~  2018    4290 2017-10-22     2320  4.1 e-1     257. </span>
+<span class="co">#&gt;  6 ABIQUA CREEK AT~ 142007~  2019    3700 2019-04-07     3000  6.2 e-1     201. </span>
+<span class="co">#&gt;  7 ABIQUA CREEK AT~ 142007~  2020    2600 2020-01-28     2190  1.7 e+0     197. </span>
+<span class="co">#&gt;  8 ABIQUA CREEK AT~ 142007~  2021    5360 2020-12-20     4360  7.6 e-1     254. </span>
+<span class="co">#&gt;  9 ABIQUA CREEK AT~ 142007~  2022      NA NA             2530  3.4 e+1     462. </span>
+<span class="co">#&gt; 10 AHTANUM CREEK A~ 125025~  1904      NA NA              530  1   e-6     165. </span>
+<span class="co">#&gt; # ... with 32,640 more rows, and 12 more variables: Flow_median &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   Flow_stdev &lt;dbl&gt;, Flow_coef_var &lt;dbl&gt;, Flow_max_dnorm &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   Flow_min_dnorm &lt;dbl&gt;, Flow_mean_dnorm &lt;dbl&gt;, Flow_med_dnorm &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   Flow_max_sdnorm &lt;dbl&gt;, Flow_min_sdnorm &lt;dbl&gt;, Flow_mean_sdnorm &lt;dbl&gt;,</span>
+<span class="co">#&gt; #   Flow_med_sdnorm &lt;dbl&gt;, Flow_sd_norm &lt;dbl&gt;</span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-5-1.png" width="75%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
 <h3 id="without-using-parallel">Without using parallel<a class="anchor" aria-label="anchor" href="#without-using-parallel"></a>
 </h3>
-<p>If you just want a single site, go for it! You don’t always have to pipe a <code><a href="reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> object into the <code>ww_*()</code> and can just use the <code>sites</code> argument. IMO its nice to have a <code><a href="reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> object because you’ll likely come back to it.</p>
+<p>If you just want a few sites (or one) and not use parallel processing, go for it! You’ll still get the advantages of filtering and stats. In addition, You don’t always have to pipe a <code><a href="reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> object into the <code>ww_*()</code> and can just use the <code>sites</code> argument. In the example below I’ll do this but IMO its nice to start with a <code><a href="reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> object because you’ll likely come back to it.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">yaak_min</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_wyUSGS.html">ww_wyUSGS</a></span><span class="op">(</span>sites <span class="op">=</span> <span class="st">'12304500'</span><span class="op">)</span>
+<code class="sourceCode R"><span class="va">withlacoochee_temp_and_flow</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_wyUSGS.html">ww_wyUSGS</a></span><span class="op">(</span>sites<span class="op">=</span><span class="st">"02319394"</span>,
+                          parameter_cd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"00010"</span>, <span class="st">"00060"</span><span class="op">)</span><span class="op">)</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning</span>
+<span class="co">#&gt; -Inf</span>
+<span class="co">#&gt; Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced</span>
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
+
+<span class="co">#&gt; Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning</span>
+<span class="co">#&gt; Inf</span>
 <span class="co">#&gt; v 'water year' was successfully downloaded.</span>
 <span class="co">#&gt; &gt; now starting to gather peak flows using dataRetrieval::readNWISpeak</span>
-<span class="co">#&gt; v 12304500 'peak flows' were successfully downloaded.</span>
+<span class="co">#&gt; v 02319394 'peak flows' were successfully downloaded.</span>
 
-<span class="fu">ggplot</span><span class="op">(</span><span class="va">yaak_min</span>, <span class="fu">aes</span><span class="op">(</span><span class="va">wy</span>, <span class="va">Flow_min</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+<span class="va">withlacoochee_temp_and_flow</span> <span class="op">%&gt;%</span> 
+  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'Wtemp_max'</span>, <span class="st">'Flow_max'</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+<span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">wy</span>, <span class="va">value</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
   <span class="fu">geom_point</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
   <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-example-1.png" width="75%" style="display: block; margin: auto;"></p>
+  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu">labs</span><span class="op">(</span>x <span class="op">=</span> <span class="st">'Water Year'</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu">facet_wrap</span><span class="op">(</span><span class="op">~</span><span class="va">name</span>, scale <span class="op">=</span> <span class="st">'free'</span><span class="op">)</span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="75%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
-<h3 id="or-minimummaximum-water-temperature">Or minimum/maximum water temperature<a class="anchor" aria-label="anchor" href="#or-minimummaximum-water-temperature"></a>
+<h3 id="stats">Stats<a class="anchor" aria-label="anchor" href="#stats"></a>
 </h3>
+<p>Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows. The <code><a href="reference/ww_statsUSGS.html">ww_statsUSGS()</a></code> function does this for you! It takes the historical values for your parameter (flow in this example) and returns percentiles (<code><a href="https://rdrr.io/pkg/dataRetrieval/man/readNWISstat.html" class="external-link">dataRetrieval::readNWISstat()</a></code>) but also combines the current values.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">withlacoochee_temp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_wyUSGS.html">ww_wyUSGS</a></span><span class="op">(</span>sites<span class="op">=</span><span class="st">"02319394"</span>,
-                          parameter_cd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"00010"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; v 'water year' was successfully downloaded.</span>
+<code class="sourceCode R"><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span><span class="op">)</span>
+<span class="co">#&gt; v Yaak River near Troy MT 'daily' was successfully downloaded.</span>
 
-<span class="fu">ggplot</span><span class="op">(</span><span class="va">withlacoochee_temp</span>, <span class="fu">aes</span><span class="op">(</span><span class="va">wy</span>, <span class="va">Wtemp_min</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
+<span class="va">yaak_daily_report</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>, 
+                                  temporalFilter <span class="op">=</span> <span class="st">'daily'</span>,
+                                  days <span class="op">=</span> <span class="fl">365</span><span class="op">)</span>
+<span class="co">#&gt; v Yaak River near Troy MT 'NWIS Stat' for Temporal Filter (daily) was successfully downloaded.</span>
+<span class="co">#&gt; Warning: 105 parsing failures.</span>
+<span class="co">#&gt;   row col expected actual</span>
+<span class="co">#&gt; 22415  -- a number    Ice</span>
+<span class="co">#&gt; 22416  -- a number    Ice</span>
+<span class="co">#&gt; 22417  -- a number    Ice</span>
+<span class="co">#&gt; 22418  -- a number    Ice</span>
+<span class="co">#&gt; 22419  -- a number    Ice</span>
+<span class="co">#&gt; ..... ... ........ ......</span>
+<span class="co">#&gt; See problems(...) for more details.</span>
+<span class="va">yaak_daily_report</span> <span class="op">%&gt;%</span> 
+  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'Flow'</span>, <span class="st">'p25_va'</span>, <span class="st">'p75_va'</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
+  <span class="fu">ggplot</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
+  <span class="fu">geom_line</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">Date</span>, <span class="va">value</span>, color <span class="op">=</span> <span class="va">name</span>, alpha <span class="op">=</span> <span class="va">name</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'p25_va'</span>, <span class="st">'p75_va'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
+  <span class="fu">scale_color_manual</span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'black'</span>, <span class="st">'red'</span>, <span class="st">'blue'</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu">scale_alpha_manual</span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">.25</span><span class="op">)</span>, guide <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu">labs</span><span class="op">(</span>y <span class="op">=</span> <span class="st">'Discharge (cfs)'</span>, color <span class="op">=</span> <span class="st">''</span>, title <span class="op">=</span> <span class="st">'Comparing current flow to 25th and 75th percentiles'</span><span class="op">)</span> <span class="op">+</span> 
   <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="75%" style="display: block; margin: auto;"></p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu">ggplot</span><span class="op">(</span><span class="va">withlacoochee_temp</span>, <span class="fu">aes</span><span class="op">(</span><span class="va">wy</span>, <span class="va">Wtemp_max</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-6-2.png" width="75%" style="display: block; margin: auto;"></p>
+<p><img src="reference/figures/README-unnamed-chunk-7-1.png" width="75%" style="display: block; margin: auto;"></p>
 </div>
 </div>
 </div>
