@@ -204,7 +204,7 @@ test_that("water year", {
 
 test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
 
-  yaak_river_dv <- ww_dvUSGS('12304500')
+  yaak_river_dv <- ww_dvUSGS('12304500', parameter_cd = c('00010','00060'))
 
   yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
                                   options = wwOptions(date_range = 'date_range',
@@ -213,6 +213,7 @@ test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
 
   #change the floor value
 
+  yaak_river_dv <- ww_dvUSGS('12304500', parameter_cd = c('00060'))
   yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
                                   options = wwOptions(date_range = 'date_range',
                                                       dates = c('2022-03-01', '2022-05-11'),
@@ -226,6 +227,14 @@ test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
 
   expect_equal(nrow(yaak_river_iv), 1)
 
+
+  yaak_river_dv <- ww_dvUSGS('12304500', parameter_cd = c('00060', '00010'))
+
+
+  yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
+                                  options = wwOptions(date_range = 'recent'))
+
+  expect_equal(nrow(yaak_river_iv), 1)
 
   # should only return one since date_range is 'recent'
 

@@ -1,0 +1,26 @@
+url: https://joshualerickson.github.io/whitewater/
+template:
+  params:
+    bootswatch: flatly
+navbar:
+  left:
+    - icon: fa-home
+      href: index.html
+  right:
+    - text: "Vignettes"
+      icon: fas fa-book
+      menu:
+      -  text: Get Daily Values
+         href: articles/get_dv.html
+      -  text: Filtering Daily Values
+         href: articles/wws.html
+      -  text: Parallel
+         href: articles/parallel.html
+      -  text: Stats
+         href: articles/stats.html
+    - text: "reference"
+      href: reference/index.html
+    - icon: fa fa-github fa-lg
+      text: "github"
+      href: https://github.com/joshualerickson/whitewater/
+

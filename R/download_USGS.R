@@ -621,6 +621,8 @@ ww_floorIVUSGS <- function(procDV,
     dplyr::select_if(all_na) %>%
     dplyr::rename_with(~name_params_to_update(.x), dplyr::contains('param'))
 
+  usgs_download_hourly <- usgs_download_hourly %>% dplyr::filter(!is.na(date))
+
 }
 
 #' Instantaneous USGS
@@ -862,9 +864,10 @@ iv_USGS <- function(data, options, type){
     final_data_logic <- df_final %>%
                         dplyr::group_by(param_type) %>%
                         dplyr::summarise(dplyr::across(c('site_no'), ~all(is.na(.))))
+
     param_names <- name_params_to_update(final_data_logic[which(final_data_logic['site_no']$site_no == TRUE),]$param_type)
 
-    if(all(isTRUE(final_data_logic[,c('site_no')]$site_no))){
+    if(purrr::is_empty(param_names)){
 
         if(type == 'inst'){
         cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("instantaneous values")} were successfully downloaded.')

@@ -6,10 +6,16 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/joshualerickson/whitewater/workflows/R-CMD-check/badge.svg)](https://github.com/joshualerickson/whitewater/actions)[![codecov](https://codecov.io/gh/joshualerickson/whitewater/branch/main/graph/badge.svg)](https://app.codecov.io/gh/joshualerickson/whitewater)
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
 <!-- badges: end -->
 
 The goal of whitewater is to provide sequential and parallel processing
-for USGS stations in a tidy-style format.
+for USGS stations in a tidy-style format. This package allows user to
+`plan()` their choice of parallel processing and then use the argument
+`parallel = TRUE` in whitewater function calls. The package also puts
+every output in a `tibble` with data munging of sites, parameter and
+stat codes, which results in a **tidy** style data frame.
 
 ## Installation
 
@@ -54,7 +60,7 @@ st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>%
   theme_bw()
 ```
 
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-2-1.png" width="75%" style="display: block; margin: auto;" />
 
 ``` r
 #need to call future::plan()
@@ -69,10 +75,10 @@ pnw_dv <- suppressMessages(ww_dvUSGS(huc17_sites$site_no,
                     parallel = TRUE))
 })
 #>    user  system elapsed 
-#>   35.97    2.81  258.45
+#>   26.23    1.95  193.35
 
 nrow(pnw_dv)
-#> [1] 11680978
+#> [1] 11681517
 ```
 
 Now we can use other `ww_` functions to filter the data by water year,
@@ -90,10 +96,10 @@ pnw_wy <- suppressWarnings(suppressMessages(ww_wyUSGS(pnw_dv,
                                      parallel = TRUE)))
 })
 #>    user  system elapsed 
-#>   16.07    0.78   84.90
+#>   11.28    0.58   70.97
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="75%" style="display: block; margin: auto;" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="75%" style="display: block; margin: auto;" /><img src="man/figures/README-unnamed-chunk-5-3.png" width="75%" style="display: block; margin: auto;" />
 
 ### Without using parallel
 
@@ -114,7 +120,7 @@ ggplot(yaak_min, aes(wy, Flow_min)) +
   theme_bw()
 ```
 
-<img src="man/figures/README-example-1.png" width="100%" />
+<img src="man/figures/README-example-1.png" width="75%" style="display: block; margin: auto;" />
 
 ### Or minimum/maximum water temperature
 
@@ -129,7 +135,7 @@ ggplot(withlacoochee_temp, aes(wy, Wtemp_min)) +
   theme_bw()
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="75%" style="display: block; margin: auto;" />
 
 ``` r
 ggplot(withlacoochee_temp, aes(wy, Wtemp_max)) +
@@ -138,4 +144,4 @@ ggplot(withlacoochee_temp, aes(wy, Wtemp_max)) +
   theme_bw()
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-6-2.png" width="75%" style="display: block; margin: auto;" />
