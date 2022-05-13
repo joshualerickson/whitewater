@@ -76,6 +76,8 @@ pnw_dv <- suppressMessages(ww_dvUSGS(huc17_sites$site_no,
 })
 
 nrow(pnw_dv)
+
+pnw_dv
 ```
 
 Now we can use other `ww_` functions to filter the data by water year, month, water year and month, as well as stat reporting (percentiles comparing current readings).   
@@ -88,6 +90,8 @@ system.time({
 pnw_wy <- suppressWarnings(suppressMessages(ww_wyUSGS(pnw_dv,
                                      parallel = TRUE)))
 })
+
+pnw_wy
 ```
 
 ```{r, echo=F, warning = F, message=F, error=F}
@@ -126,92 +130,46 @@ p2 <- pnw_wy %>%
 library(patchwork)
 (p2|p1 + theme(legend.position = 'bottom', legend.margin = margin(l = -10, unit='cm'))) +
   plot_annotation(title = 'Mann-Kendall trend analysis (Peak Flow) with active USGS sites in Region 17', subtitle =  '10 years or more of data and drainage area < 2,000 km2')
-
-p1 <-  pnw_wy %>% 
-  group_by(site_no) %>% 
-  filter(!is.na(peak_va)) %>% 
-  add_count() %>% 
-  filter( n > 10) %>% 
-  nest() %>% 
-  mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va))['p.value'])) %>% 
-  unnest() %>% 
-   filter(p.value <= 0.05) %>% 
-   group_by(Station) %>% 
-   mutate(mean_q = mean(peak_va, na.rm = T)) %>% 
-  nest() %>% 
-  mutate(model = map(data, ~broom::tidy(lm(.$Flow_coef_var~.$wy, data = .))[2,2])) %>% 
-  unnest() %>% ungroup() %>% 
-   mutate(cut_q = cut_number(mean_q, n = 6),
-          slope_col = if_else(estimate < 0, 'decrease', 'increase')) %>%  
-   ggplot(aes(wy, peak_va)) + 
-   geom_point(alpha = 0.05) + 
-   stat_smooth(geom = 'line',alpha = 0.5,aes(group = site_no, color = slope_col),
-               method = 'lm', se = F) +
-   theme_bw() + 
-   scale_y_continuous(labels = scales::comma) +
-  facet_wrap(~cut_q, scales = 'free') + 
-   labs(color = 'Slope (beta)', y = 'Peak Flows (cfs)',title = 'Sites with (p <= 0.05) and slope of linear model as color',
-        subtitle = 'faceted by all-time mean peak flow')
- 
-p2 <- pnw_wy %>% 
-  group_by(site_no) %>% 
-  filter(!is.na(peak_va)) %>% 
-  add_count() %>% 
-  filter( n > 10) %>% 
-  nest() %>% 
-  mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va))['p.value'])) %>% 
-  unnest() %>% 
-   filter(p.value <= 0.05) %>% 
-   group_by(Station) %>% 
-   mutate(mean_q = mean(peak_va, na.rm = T)) %>% 
-  nest() %>% 
-  mutate(model = map(data, ~broom::tidy(lm(.$Flow_coef_var~.$wy, data = .))[2,2])) %>% 
-  unnest() %>% ungroup() %>% 
-   mutate(cut_q = cut_number(mean_q, n = 6),
-          slope_col = if_else(estimate < 0, 'decrease', 'increase'))%>% 
-  group_by(site_no) %>% slice(n=1) %>% left_join(pnw_dv %>% group_by(site_no) %>% 
-                                         dplyr::select(site_no, lat, long) %>% 
-                                         slice(n=1), by = 'site_no') %>% 
-  st_as_sf(coords = c('long', 'lat')) %>% 
-  ggplot() + 
-  geom_sf(aes(color = slope_col), show.legend = F, size = 1)+
-  borders('state', xlim = c(-130, -110), ylim = c(20, 50)) + 
-  theme_bw()
-
-
-p1 
-p2
 ```
+
 
 ### Without using parallel  
 
-If you just want a single site, go for it! You don't always have to pipe a `ww_dvUSGS()` object into the `ww_*()` and can just use the `sites` argument. IMO its nice to have a `ww_dvUSGS()` object because you'll likely come back to it.  
-
-```{r example}
-
-yaak_min <- ww_wyUSGS(sites = '12304500')
-
-ggplot(yaak_min, aes(wy, Flow_min)) +
-  geom_point() + 
-  geom_line() +
-  theme_bw()
-```
-
-### Or minimum/maximum water temperature
+If you just want a few sites (or one) and not use parallel processing, go for it! You'll still get the advantages of filtering and stats. In addition, You don't always have to pipe a `ww_dvUSGS()` object into the `ww_*()` and can just use the `sites` argument. In the example below I'll do this but IMO its nice to start with a `ww_dvUSGS()` object because you'll likely come back to it.   
 
 ```{r}
 
-withlacoochee_temp <- ww_wyUSGS(sites="02319394",
-                          parameter_cd = c("00010"))
+withlacoochee_temp_and_flow <- ww_wyUSGS(sites="02319394",
+                          parameter_cd = c("00010", "00060"))
 
-ggplot(withlacoochee_temp, aes(wy, Wtemp_min)) +
+withlacoochee_temp_and_flow %>% 
+  pivot_longer(c('Wtemp_max', 'Flow_max')) %>% 
+ggplot(aes(wy, value)) +
   geom_point() + 
   geom_line() +
-  theme_bw()
+  theme_bw() +
+  labs(x = 'Water Year') +
+  facet_wrap(~name, scale = 'free')
 
-ggplot(withlacoochee_temp, aes(wy, Wtemp_max)) +
-  geom_point() + 
-  geom_line() +
+```
+
+### Stats  
+
+Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows. The `ww_statsUSGS()` function does this for you! It takes the historical values for your parameter (flow in this example) and returns percentiles (`dataRetrieval::readNWISstat()`) but also combines the current values.  
+
+```{r}
+yaak_river_dv <- ww_dvUSGS('12304500')
+
+yaak_daily_report <- ww_statsUSGS(yaak_river_dv, 
+                                  temporalFilter = 'daily',
+                                  days = 365)
+yaak_daily_report %>% 
+  pivot_longer(c('Flow', 'p25_va', 'p75_va')) %>% 
+  ggplot() + 
+  geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va'))) + 
+  scale_color_manual(values = c('black', 'red', 'blue')) +
+  scale_alpha_manual(values = c(1,.25), guide = 'none') +
+  labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to 25th and 75th percentiles') + 
   theme_bw()
 ```
 

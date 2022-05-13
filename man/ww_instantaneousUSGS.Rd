@@ -40,7 +40,6 @@ provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the
 }
 \examples{
 \dontrun{
-
 library(whitewater)
 yaak_river_dv <- ww_dvUSGS('12304500',
 parameter_cd = '00060',
@@ -85,4 +84,5 @@ parallel = TRUE)
 pnw_iv <- ww_instantaneousUSGS(pnw_dv,
                     parallel = TRUE)
 }
+
 }

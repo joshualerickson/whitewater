@@ -255,18 +255,18 @@ if(missing(procDV)) {
                       group_by(Station,wy,site_no) %>%
                       summarise(across(dplyr::any_of(cols),
                                        list(
-                                         max = ~max(.x, na.rm = TRUE),
-                                         min = ~min(.x, na.rm = TRUE),
+                                         max = ~pmax(.x, na.rm = TRUE),
+                                         min = ~pmin(.x, na.rm = TRUE),
                                          mean = ~mean(.x, na.rm = TRUE),
                                          median = ~median(.x, na.rm = TRUE),
                                          stdev = ~sd(.x, na.rm = TRUE),
                                          coef_var = ~sd(.x, na.rm = TRUE)/mean(.x, na.rm = TRUE),
-                                         max_dnorm = ~max(.x, na.rm = TRUE)/drainage_area,
-                                         min_dnorm = ~min(.x, na.rm = TRUE)/drainage_area,
+                                         max_dnorm = ~pmax(.x, na.rm = TRUE)/drainage_area,
+                                         min_dnorm = ~pmin(.x, na.rm = TRUE)/drainage_area,
                                          mean_dnorm = ~mean(.x, na.rm = TRUE)/drainage_area,
                                          med_dnorm = ~median(.x, na.rm = TRUE)/drainage_area,
-                                         max_sdnorm = ~log(max(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
-                                         min_sdnorm = ~log(min(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
+                                         max_sdnorm = ~log(pmax(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
+                                         min_sdnorm = ~log(pmin(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
                                          mean_sdnorm = ~log(mean(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
                                          med_sdnorm = ~log(median(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
                                          sd_norm = ~sd(log(.x), na.rm = TRUE))))  %>%
@@ -351,8 +351,8 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
                     group_by(Station, wy, month_abb, month) %>%
                     summarise(across(dplyr::any_of(cols),
                                      list(
-                                       max = ~max(.x, na.rm = TRUE),
-                                       min = ~min(.x, na.rm = TRUE),
+                                       max = ~pmax(.x, na.rm = TRUE),
+                                       min = ~pmin(.x, na.rm = TRUE),
                                        mean = ~mean(.x, na.rm = TRUE),
                                        median = ~median(.x, na.rm = TRUE),
                                        stdev = ~sd(.x, na.rm = TRUE),
@@ -428,8 +428,8 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
                 group_by(Station, month_abb) %>%
                 summarise(across(dplyr::any_of(cols),
                                  list(
-                                   max = ~max(.x, na.rm = TRUE),
-                                   min = ~min(.x, na.rm = TRUE),
+                                   max = ~pmax(.x, na.rm = TRUE),
+                                   min = ~pmin(.x, na.rm = TRUE),
                                    mean = ~mean(.x, na.rm = TRUE),
                                    median = ~median(.x, na.rm = TRUE),
                                    stdev = ~sd(.x, na.rm = TRUE),
@@ -642,7 +642,6 @@ ww_floorIVUSGS <- function(procDV,
 #' @export
 #'
 #' @examples \dontrun{
-#'
 #' library(whitewater)
 #' yaak_river_dv <- ww_dvUSGS('12304500',
 #' parameter_cd = '00060',
@@ -687,6 +686,7 @@ ww_floorIVUSGS <- function(procDV,
 #' pnw_iv <- ww_instantaneousUSGS(pnw_dv,
 #'                     parallel = TRUE)
 #' }
+#'
 #' @importFrom lubridate ymd_hm floor_date
 #' @importFrom dplyr mutate rename rename_with group_by mutate relocate summarise ungroup contains
 #' @importFrom dataRetrieval renameNWISColumns readNWISsite

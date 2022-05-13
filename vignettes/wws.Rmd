@@ -1,5 +1,5 @@
 ---
-title: "whitewater Applications"
+title: "wws"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{wws}
