@@ -137,7 +137,7 @@ library(patchwork)
 
 If you just want a few sites (or one) and not use parallel processing, go for it! You'll still get the advantages of filtering and stats. In addition, You don't always have to pipe a `ww_dvUSGS()` object into the `ww_*()` and can just use the `sites` argument. In the example below I'll do this but IMO its nice to start with a `ww_dvUSGS()` object because you'll likely come back to it.   
 
-```{r}
+```{r, warning=F}
 
 withlacoochee_temp_and_flow <- ww_wyUSGS(sites="02319394",
                           parameter_cd = c("00010", "00060"))

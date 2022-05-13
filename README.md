@@ -75,7 +75,7 @@ pnw_dv <- suppressMessages(ww_dvUSGS(huc17_sites$site_no,
                     parallel = TRUE))
 })
 #>    user  system elapsed 
-#>   29.37    2.05  214.42
+#>   25.69    1.98  201.12
 
 nrow(pnw_dv)
 #> [1] 11681517
@@ -118,22 +118,22 @@ pnw_wy <- suppressWarnings(suppressMessages(ww_wyUSGS(pnw_dv,
                                      parallel = TRUE)))
 })
 #>    user  system elapsed 
-#>   13.16    0.57   66.72
+#>   12.41    0.27   64.43
 
 pnw_wy
 #> # A tibble: 32,650 x 20
 #>    Station          site_no    wy peak_va peak_dt    Flow_max Flow_min Flow_mean
 #>    <chr>            <chr>   <int>   <dbl> <date>        <dbl>    <dbl>     <dbl>
-#>  1 ABIQUA CREEK AT~ 142007~  2014      NA NA              123  3.4 e-1      25.6
-#>  2 ABIQUA CREEK AT~ 142007~  2015    3330 2014-12-21     2400  8.5 e-1     199. 
-#>  3 ABIQUA CREEK AT~ 142007~  2016    5980 2015-12-07     3230  7   e-1     318. 
-#>  4 ABIQUA CREEK AT~ 142007~  2017    3740 2017-03-09     2390  1.05e+0     405. 
-#>  5 ABIQUA CREEK AT~ 142007~  2018    4290 2017-10-22     2320  4.1 e-1     257. 
-#>  6 ABIQUA CREEK AT~ 142007~  2019    3700 2019-04-07     3000  6.2 e-1     201. 
-#>  7 ABIQUA CREEK AT~ 142007~  2020    2600 2020-01-28     2190  1.7 e+0     197. 
-#>  8 ABIQUA CREEK AT~ 142007~  2021    5360 2020-12-20     4360  7.6 e-1     254. 
-#>  9 ABIQUA CREEK AT~ 142007~  2022      NA NA             2530  3.4 e+1     462. 
-#> 10 AHTANUM CREEK A~ 125025~  1904      NA NA              530  1   e-6     165. 
+#>  1 ABIQUA CREEK AT~ 142007~  2014      NA NA            53.2     53.2       25.6
+#>  2 ABIQUA CREEK AT~ 142007~  2015    3330 2014-12-21    17.8     17.8      199. 
+#>  3 ABIQUA CREEK AT~ 142007~  2016    5980 2015-12-07     6.09     6.09     318. 
+#>  4 ABIQUA CREEK AT~ 142007~  2017    3740 2017-03-09    11.9     11.9      405. 
+#>  5 ABIQUA CREEK AT~ 142007~  2018    4290 2017-10-22    24.1     24.1      257. 
+#>  6 ABIQUA CREEK AT~ 142007~  2019    3700 2019-04-07     8.78     8.78     201. 
+#>  7 ABIQUA CREEK AT~ 142007~  2020    2600 2020-01-28    28.4     28.4      197. 
+#>  8 ABIQUA CREEK AT~ 142007~  2021    5360 2020-12-20    13.1     13.1      254. 
+#>  9 ABIQUA CREEK AT~ 142007~  2022      NA NA            59.7     59.7      462. 
+#> 10 AHTANUM CREEK A~ 125025~  1904      NA NA           450      450        165. 
 #> # ... with 32,640 more rows, and 12 more variables: Flow_median <dbl>,
 #> #   Flow_stdev <dbl>, Flow_coef_var <dbl>, Flow_max_dnorm <dbl>,
 #> #   Flow_min_dnorm <dbl>, Flow_mean_dnorm <dbl>, Flow_med_dnorm <dbl>,
@@ -155,271 +155,6 @@ because you’ll likely come back to it.
 ``` r
 withlacoochee_temp_and_flow <- ww_wyUSGS(sites="02319394",
                           parameter_cd = c("00010", "00060"))
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in max(Wtemp, na.rm = TRUE): no non-missing arguments to max; returning
-#> -Inf
-#> Warning in log(max(Wtemp, na.rm = TRUE)): NaNs produced
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
-
-#> Warning in min(Wtemp, na.rm = TRUE): no non-missing arguments to min; returning
-#> Inf
 #> v 'water year' was successfully downloaded.
 #> > now starting to gather peak flows using dataRetrieval::readNWISpeak
 #> v 02319394 'peak flows' were successfully downloaded.
@@ -454,11 +189,11 @@ yaak_daily_report <- ww_statsUSGS(yaak_river_dv,
 #> v Yaak River near Troy MT 'NWIS Stat' for Temporal Filter (daily) was successfully downloaded.
 #> Warning: 105 parsing failures.
 #>   row col expected actual
+#> 22414  -- a number    Ice
 #> 22415  -- a number    Ice
 #> 22416  -- a number    Ice
 #> 22417  -- a number    Ice
 #> 22418  -- a number    Ice
-#> 22419  -- a number    Ice
 #> ..... ... ........ ......
 #> See problems(...) for more details.
 yaak_daily_report %>% 
