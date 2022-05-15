@@ -12,6 +12,7 @@ ww_dvUSGS(
   stat_cd = "00003",
   parallel = FALSE,
   wy_month = 10,
+  verbose = TRUE,
   ...
 )
 }
@@ -29,6 +30,8 @@ ww_dvUSGS(
 \item{parallel}{\code{logical} indicating whether to use future_map().}
 
 \item{wy_month}{\code{numeric} indicating the start month of the water year. e.g. 10 (default).}
+
+\item{verbose}{\code{logical} for printing information. TRUE (default).}
 
 \item{...}{arguments to pass on to \link[furrr]{future_map}.}
 }

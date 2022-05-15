@@ -10,6 +10,7 @@ ww_instantaneousUSGS(
   parameter_cd = NULL,
   options = wwOptions(),
   parallel = FALSE,
+  verbose = TRUE,
   ...
 )
 }
@@ -23,6 +24,8 @@ ww_instantaneousUSGS(
 \item{options}{A \link[whitewater]{wwOptions} call.}
 
 \item{parallel}{\code{logical} indicating whether to use future_map().}
+
+\item{verbose}{\code{logical} for printing information. TRUE (default).}
 
 \item{...}{arguments to pass on to \link[furrr]{future_map}.}
 }

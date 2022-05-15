@@ -10,6 +10,7 @@
 #' @param stat_cd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
 #' @param parallel \code{logical} indicating whether to use future_map().
 #' @param wy_month \code{numeric} indicating the start month of the water year. e.g. 10 (default).
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
 #'
@@ -54,6 +55,7 @@ ww_dvUSGS <- function(sites,
                          stat_cd = "00003",
                          parallel = FALSE,
                          wy_month = 10,
+                         verbose = TRUE,
                          ...) {
 
   site_id_usgs <- data.frame(sites = sites)
@@ -66,7 +68,8 @@ ww_dvUSGS <- function(sites,
                                                                      parameter_cd,
                                                                      start_date,
                                                                      end_date,
-                                                                     stat_cd
+                                                                     stat_cd,
+                                                                     verbose
                                                                      )),
                         ...) %>%
                     purrr::keep(~length(.) != 0) %>%
@@ -81,7 +84,8 @@ ww_dvUSGS <- function(sites,
                                                               parameter_cd,
                                                               start_date,
                                                               end_date,
-                                                              stat_cd
+                                                              stat_cd,
+                                                              verbose
                     ))) %>%
                     purrr::keep(~length(.) != 0) %>%
                     purrr::map(~.x[['result']]) %>%
@@ -120,11 +124,11 @@ ww_dvUSGS <- function(sites,
 #' @param start_date A character of date format, e.g. \code{"1990-09-01"}
 #' @param end_date A character of date format, e.g. \code{"1990-09-01"}
 #' @param stat_cd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
-#'
+#' @param verbose logical for printing information.
 #' @importFrom crayon red
 #' @noRd
 #' @return A tidied data frame with gage meta-data.
-prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd) {
+prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd, verbose) {
 
   gage_data <- readNWISdv(siteNumbers = site_no,
                           parameterCd = parameter_cd,
@@ -147,6 +151,7 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
 
   final_data <- dplyr::left_join(gage_data, gage_info, by = 'site_no')
 
+  if(isTRUE(verbose)){
   if(nrow(final_data) < 1){
 
     final_data <- NULL
@@ -165,7 +170,7 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
      } else {
       cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("daily")} was successfully downloaded.')
      }
-  }
+  }}
 
   final_data
 }
@@ -178,6 +183,7 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} vector with NWIS site numbers (optional).
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map} and/or \link[whitewater]{ww_dvUSGS}.
 #'
 #' @note If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
@@ -224,6 +230,7 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
 ww_wyUSGS <- function(procDV,
                       sites = NULL,
                       parallel = FALSE,
+                      verbose = TRUE,
                       ...) {
 
 if(missing(procDV)) {
@@ -251,48 +258,50 @@ if(missing(procDV)) {
 #summarize by water year with different stats for different params
 
   cols <- cols_to_update(usgs_raw)
-  usgs_min_max_wy <- usgs_raw %>%
+  suppressWarnings(usgs_min_max_wy <- usgs_raw %>%
                       group_by(Station,wy,site_no) %>%
                       summarise(across(dplyr::any_of(cols),
                                        list(
-                                         max = ~pmax(.x, na.rm = TRUE),
-                                         min = ~pmin(.x, na.rm = TRUE),
+                                         max = ~max(.x, na.rm = TRUE),
+                                         min = ~min(.x, na.rm = TRUE),
                                          mean = ~mean(.x, na.rm = TRUE),
                                          median = ~median(.x, na.rm = TRUE),
                                          stdev = ~sd(.x, na.rm = TRUE),
                                          coef_var = ~sd(.x, na.rm = TRUE)/mean(.x, na.rm = TRUE),
-                                         max_dnorm = ~pmax(.x, na.rm = TRUE)/drainage_area,
-                                         min_dnorm = ~pmin(.x, na.rm = TRUE)/drainage_area,
+                                         max_dnorm = ~max(.x, na.rm = TRUE)/drainage_area,
+                                         min_dnorm = ~min(.x, na.rm = TRUE)/drainage_area,
                                          mean_dnorm = ~mean(.x, na.rm = TRUE)/drainage_area,
                                          med_dnorm = ~median(.x, na.rm = TRUE)/drainage_area,
-                                         max_sdnorm = ~log(pmax(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
-                                         min_sdnorm = ~log(pmin(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
+                                         max_sdnorm = ~log(max(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
+                                         min_sdnorm = ~log(min(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
                                          mean_sdnorm = ~log(mean(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
                                          med_sdnorm = ~log(median(.x, na.rm = TRUE))/sd(log(.x), na.rm = TRUE),
                                          sd_norm = ~sd(log(.x), na.rm = TRUE))))  %>%
                       slice_head(n=1) %>%
                       ungroup() %>%
                       dt_to_tibble()
+)
+
 
   if(nrow(usgs_min_max_wy) < 1){
 
     usgs_min_max_wy <- NULL
 
   } else {
-
+if(isTRUE(verbose)){
     cli::cli_alert_success('{usethis::ui_value("water year")} was successfully downloaded.')
-
+}
   }
 
     if("Flow" %in% cols){
 
       wy_month <- attributes(usgs_raw)$wy_month
-
+if(isTRUE(verbose)){
       cli::cli_alert('now starting to gather peak flows using dataRetrieval::readNWISpeak')
+}
+      usgs_min_max_wy <- adding_peaks_to_df(usgs_min_max_wy, parallel = parallel, wy_month = wy_month, verbose)
 
-      usgs_min_max_wy <- adding_peaks_to_df(usgs_min_max_wy, parallel = parallel, wy_month = wy_month)
-
-      }
+    }
 
   usgs_min_max_wy
 }
@@ -305,6 +314,7 @@ if(missing(procDV)) {
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} vector with NWIS site numbers (optional).
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{ww_dvUSGS}.
 #'
 #' @note If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
@@ -328,7 +338,7 @@ if(missing(procDV)) {
 #' @importFrom lubridate parse_date_time ymd
 #' @importFrom stringr str_c
 #'
-ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
+ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, verbose = TRUE, ...) {
 
     if(missing(procDV)) {
 
@@ -347,12 +357,12 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 
       cols <- cols_to_update(usgs_raw)
 
-      final_data <- usgs_raw %>%
+      suppressWarnings(final_data <- usgs_raw %>%
                     group_by(Station, wy, month_abb, month) %>%
                     summarise(across(dplyr::any_of(cols),
                                      list(
-                                       max = ~pmax(.x, na.rm = TRUE),
-                                       min = ~pmin(.x, na.rm = TRUE),
+                                       max = ~max(.x, na.rm = TRUE),
+                                       min = ~min(.x, na.rm = TRUE),
                                        mean = ~mean(.x, na.rm = TRUE),
                                        median = ~median(.x, na.rm = TRUE),
                                        stdev = ~sd(.x, na.rm = TRUE),
@@ -362,6 +372,8 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
                     mutate(year_month =  str_c(wy, month,"1", sep = "-"),
                            year_month =  parse_date_time(year_month, orders = c("%y-%m-%d", "%y%m%d", "%y-%m-%d %H:%M")),
                            year_month =  ymd(as.character(year_month)))
+      )
+
 
 
   if(nrow(final_data) < 1){
@@ -369,11 +381,11 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
   final_data <- NULL
 
   } else {
-
+if(isTRUE(verbose)){
   cli::cli_alert_success('{usethis::ui_value("water year and month")} was successfully downloaded.')
 
   }
-
+}
   final_data
 
 }
@@ -385,6 +397,7 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} vector with NWIS site numbers (optional).
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{ww_dvUSGS}.
 #' @note If a previously created \link[whitewater]{ww_dvUSGS} object is not used then the user needs to
 #' provide a \code{sites} vector. This will run \link[whitewater]{ww_dvUSGS} in the background.
@@ -404,7 +417,7 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #'
 #'
 
-ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
+ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, verbose = TRUE, ...) {
 
   if(missing(procDV)) {
 
@@ -424,26 +437,27 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 
   cols <- cols_to_update(usgs_raw)
 
-  final_data <- usgs_raw  %>%
+ suppressWarnings( final_data <- usgs_raw  %>%
                 group_by(Station, month_abb) %>%
                 summarise(across(dplyr::any_of(cols),
                                  list(
-                                   max = ~pmax(.x, na.rm = TRUE),
-                                   min = ~pmin(.x, na.rm = TRUE),
+                                   max = ~max(.x, na.rm = TRUE),
+                                   min = ~min(.x, na.rm = TRUE),
                                    mean = ~mean(.x, na.rm = TRUE),
                                    median = ~median(.x, na.rm = TRUE),
                                    stdev = ~sd(.x, na.rm = TRUE),
                                    coef_var = ~sd(.x, na.rm = TRUE)/mean(.x, na.rm = TRUE)))) %>%
-                          ungroup()
+                          ungroup())
+
 
   if(nrow(final_data) < 1){
 
     final_data <- NULL
 
   } else {
-
+if(isTRUE(verbose)){
     cli::cli_alert_success('{usethis::ui_value("monthly")} data was successfully downloaded.')
-
+}
   }
 
   final_data
@@ -459,6 +473,7 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, ...) {
 #' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param options A \link[whitewater]{wwOptions} call.
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
 #'
@@ -524,7 +539,9 @@ ww_floorIVUSGS <- function(procDV,
                           sites = NULL,
                           parameter_cd = NULL,
                           options = wwOptions(),
-                          parallel = FALSE, ...) {
+                          parallel = FALSE,
+                          verbose = TRUE,
+                          ...) {
 
   if(!is.null(sites) & !missing(procDV)){stop("Can't use both Sites and procDV")}
   if(is.null(sites) & missing(procDV)){stop("Need at least one argument!")}
@@ -581,7 +598,7 @@ ww_floorIVUSGS <- function(procDV,
     usgs_download_hourly <- site_station_days %>%
                             split(.$sites) %>%
                             furrr::future_map(safely(~iv_USGS(., options = .$options[[1]],
-                                                              type = 'hour')), ...) %>%
+                                                              type = 'hour', verbose = verbose)), ...) %>%
                             purrr::keep(~length(.) != 0) %>%
                             purrr::map(~.x[['result']]) %>%
                             purrr::map(~rename_with(., ~gsub(".*_","", .x),
@@ -593,7 +610,7 @@ ww_floorIVUSGS <- function(procDV,
     usgs_download_hourly <- site_station_days %>%
                             split(.$sites) %>%
                             purrr::map(safely(~iv_USGS(., options = .$options[[1]],
-                                                       type = 'hour')))%>%
+                                                       type = 'hour', verbose = verbose)))%>%
                             purrr::keep(~length(.) != 0) %>%
                             purrr::map(~.x[['result']]) %>%
                             purrr::map(~rename_with(., ~gsub(".*_","", .x),
@@ -608,13 +625,13 @@ ww_floorIVUSGS <- function(procDV,
                           dt_to_tibble() %>%
                           mutate(date = ymd_hm(datetime))
 
-  usgs_download_hourly <- usgs_download_hourly %>%
+  suppressWarnings(usgs_download_hourly <- usgs_download_hourly %>%
     mutate(date=floor_date(date, options[['floor_iv']])) %>%
     mutate(across(dplyr::any_of(cols), readr::parse_number)) %>%
     group_by(Station, site_no,param_type, date) %>%
     dplyr::summarise(across(dplyr::any_of(cols),
                             ~mean(.x, na.rm = TRUE))) %>%
-    ungroup()
+    ungroup())
 
   usgs_download_hourly <- usgs_download_hourly %>%
     tidyr::pivot_wider(names_from = param_type, values_from = dplyr::any_of(cols)) %>%
@@ -633,6 +650,7 @@ ww_floorIVUSGS <- function(procDV,
 #' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param options A \link[whitewater]{wwOptions} call.
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
 #' @note For performance reasons, with multi-site retrievals you may
@@ -696,7 +714,9 @@ ww_instantaneousUSGS <- function(procDV,
                                  sites = NULL,
                                  parameter_cd = NULL,
                                  options = wwOptions(),
-                                 parallel = FALSE, ...) {
+                                 parallel = FALSE,
+                                 verbose = TRUE,
+                                 ...) {
 
   if(!is.null(sites) & !missing(procDV)){stop("Can't use both Sites and procDV")}
   if(is.null(sites) & missing(procDV)){stop("Need at least one argument!")}
@@ -753,7 +773,7 @@ ww_instantaneousUSGS <- function(procDV,
     usgs_download_inst <- site_station_days %>%
       split(.$sites) %>%
       furrr::future_map(safely(~iv_USGS(., options = .$options[[1]],
-                                        type = 'inst')),...) %>%
+                                        type = 'inst', verbose = verbose)),...) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']])%>%
       purrr::map(~rename_with(., ~gsub(".*_","", .x),
@@ -765,7 +785,7 @@ ww_instantaneousUSGS <- function(procDV,
     usgs_download_inst <- site_station_days %>%
       split(.$sites) %>%
       purrr::map(safely(~iv_USGS(., options = .$options[[1]],
-                                 type = 'inst')))%>%
+                                 type = 'inst', verbose = verbose)))%>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       purrr::map(~rename_with(., ~gsub(".*_","", .x),
@@ -780,10 +800,10 @@ ww_instantaneousUSGS <- function(procDV,
     dt_to_tibble() %>%
     mutate(date = ymd_hm(datetime))
 
-  usgs_download_inst <- usgs_download_inst %>%
+  suppressWarnings(usgs_download_inst <- usgs_download_inst %>%
     mutate(across(dplyr::any_of(cols), iv_error_codes, .names = "{.col}_error")) %>%
     mutate(across(dplyr::any_of(cols), readr::parse_number)) %>%
-    select(Station, site_no,param_type, date, dplyr::any_of(cols), dplyr::ends_with("_error"))
+    select(Station, site_no,param_type, date, dplyr::any_of(cols), dplyr::ends_with("_error")))
 
   usgs_download_inst <- usgs_download_inst %>%
     tidyr::pivot_wider(names_from = param_type, values_from = dplyr::any_of(cols)) %>%
@@ -797,11 +817,12 @@ ww_instantaneousUSGS <- function(procDV,
 #' @param data the original data.frame
 #' @param options a list of API arguments
 #' @param type character of API call
+#' @param verbose logical for printing information
 #'
 #' @noRd
 #' @return A data.frame with instantaneous values
 #'
-iv_USGS <- function(data, options, type){
+iv_USGS <- function(data, options, type, verbose){
 
   df_final <- data.frame()
 
@@ -854,7 +875,7 @@ iv_USGS <- function(data, options, type){
   df_final <- plyr::rbind.fill(df_final, df)
 
   }
-
+if(isTRUE(verbose)){
   if(all(is.na(df_final[,c('site_no', 'datetime')]))){
 
     cli::cli_alert_warning('{usethis::ui_field({data$station})} ran into an error (no data for user input).')
@@ -891,7 +912,7 @@ iv_USGS <- function(data, options, type){
     }
 
   }
-
+}
  df_final
 
 }
@@ -975,6 +996,7 @@ wwfilterNULL(
 #' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param days A \code{numeric} input of days to go back from today (only needed if using .temporalFilter = 'daily').
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
 #' @note Be aware, the parameter values ('Flow', 'Wtemp', etc) are calculated from the \link[whitewater]{ww_floorIVUSGS}
@@ -1007,7 +1029,9 @@ ww_statsUSGS <- function(procDV,
                             temporalFilter = 'daily',
                             parameter_cd = NULL,
                             days = 10,
-                            parallel = FALSE, ...) {
+                            parallel = FALSE,
+                            verbose = TRUE,
+                            ...) {
 
   switch(temporalFilter,
          'daily' = ww_reportUSGSdv(procDV = procDV,
@@ -1015,16 +1039,19 @@ ww_statsUSGS <- function(procDV,
                                    parameter_cd = parameter_cd,
                                    days = days,
                                    parallel = parallel,
+                                   verbose = verbose,
                                    ...),
          'monthly' = ww_reportUSGSmv(procDV = procDV,
                                      sites = sites,
                                      parameter_cd = parameter_cd,
                                      parallel = parallel,
+                                     verbose = verbose,
                                      ...),
          'yearly' = ww_reportUSGSav(procDV = procDV,
                                      sites = sites,
                                      parameter_cd = parameter_cd,
                                      parallel = parallel,
+                                     verbose = verbose,
                                      ...))
 }
 
@@ -1037,6 +1064,7 @@ ww_statsUSGS <- function(procDV,
 #' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param days A \code{numeric} input of days.
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
 #' @return A \code{tibble} with daily stats.
@@ -1049,7 +1077,9 @@ ww_reportUSGSdv <- function(procDV,
                             sites = NULL,
                             parameter_cd = NULL,
                             days = 10,
-                            parallel = FALSE, ...) {
+                            parallel = FALSE,
+                            verbose = TRUE,
+                            ...) {
 
 
   site_station_days <- prepping_reports(procDV, sites, parameter_cd)
@@ -1060,7 +1090,7 @@ ww_reportUSGSdv <- function(procDV,
 
     usgs_statsdv <- site_station_days %>%
                     split(.$sites) %>%
-                    furrr::future_map(safely(~usgs_stats_fun(., type = 'daily')),...) %>%
+                    furrr::future_map(safely(~usgs_stats_fun(., type = 'daily', verbose = verbose)),...) %>%
                     purrr::keep(~length(.) != 0) %>%
                     purrr::map(~.x[['result']]) %>%
                     plyr::rbind.fill() %>%
@@ -1070,7 +1100,7 @@ ww_reportUSGSdv <- function(procDV,
 
     usgs_statsdv <- site_station_days %>%
                     split(.$sites) %>%
-                    purrr::map(safely(~usgs_stats_fun(., type = 'daily'))) %>%
+                    purrr::map(safely(~usgs_stats_fun(., type = 'daily', verbose = verbose))) %>%
                     purrr::keep(~length(.) != 0) %>%
                     purrr::map(~.x[['result']]) %>%
                     plyr::rbind.fill() %>%
@@ -1094,10 +1124,12 @@ ww_reportUSGSdv <- function(procDV,
 #' get daily stats
 #'
 #' @param data data.frame
+#' @param type what type of temporal stat to perform
+#' @param verbose logical to print information
 #'
 #' @return a data.frame with daily or monthly stats from readNWISstat
 #' @noRd
-usgs_stats_fun <- function(data, type) {
+usgs_stats_fun <- function(data, type, verbose) {
 
 
   final_data <- switch(type,
@@ -1122,7 +1154,7 @@ usgs_stats_fun <- function(data, type) {
                     mutate(Station = readNWISsite(data$sites) %>%
                     select(station_nm) %>%
                     as.character()))
-
+if(isTRUE(verbose)){
   if(nrow(final_data) < 1){
 
     cli::cli_alert_success('{usethis::ui_field(data$Station)} {usethis::ui_value("no values")} for Temporal Filter ({type}) and parameter_cd ({data$params[[1]]}).')
@@ -1138,7 +1170,7 @@ usgs_stats_fun <- function(data, type) {
     cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("NWIS Stat")} for Temporal Filter ({type}) was successfully downloaded.')
     }
   }
-
+}
   final_data
 
 }
@@ -1199,6 +1231,7 @@ clean_hourly_dv_report <- function(pp, data, days, ...) {
 #' @param sites A \code{character} USGS NWIS site.
 #' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #' @return A \code{tibble} with monthly stats.
 #' @noRd
@@ -1209,6 +1242,7 @@ ww_reportUSGSmv <- function(procDV,
                             sites = NULL,
                             parameter_cd = NULL,
                             parallel = FALSE,
+                            verbose = TRUE,
                             ...) {
 
 if(missing(procDV) & is.null(sites))stop("Need at least one argument")
@@ -1223,7 +1257,7 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 
     usgs_statsmv <- site_station_days %>%
       split(.$sites) %>%
-      furrr::future_map(safely(~usgs_stats_fun(., type = 'monthly')),...) %>%
+      furrr::future_map(safely(~usgs_stats_fun(., type = 'monthly', verbose = verbose)),...) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%
@@ -1233,7 +1267,7 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 
     usgs_statsmv <- site_station_days %>%
       split(.$sites) %>%
-      purrr::map(safely(~usgs_stats_fun(., type = 'monthly'))) %>%
+      purrr::map(safely(~usgs_stats_fun(., type = 'monthly', verbose = verbose))) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%
@@ -1270,6 +1304,7 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 #' @param sites A \code{character} USGS NWIS site.
 #' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.
 #' @param parallel \code{logical} indicating whether to use future_map().
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... arguments to pass on to \link[furrr]{future_map}.
 #'
 #' @return A \code{tibble} with annual stats.
@@ -1281,6 +1316,7 @@ ww_reportUSGSav <- function(procDV,
                             sites = NULL,
                             parameter_cd = NULL,
                             parallel = FALSE,
+                            verbose = TRUE,
                             ...) {
 
   if(missing(procDV) & is.null(sites))stop("Need at least one argument")
@@ -1295,7 +1331,7 @@ ww_reportUSGSav <- function(procDV,
 
     usgs_statsav <- site_station_days %>%
       split(.$sites) %>%
-      furrr::future_map(safely(~usgs_stats_fun(., type = 'yearly')),...) %>%
+      furrr::future_map(safely(~usgs_stats_fun(., type = 'yearly', verbose = verbose)),...) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%
@@ -1305,7 +1341,7 @@ ww_reportUSGSav <- function(procDV,
 
     usgs_statsav <- site_station_days %>%
       split(.$sites) %>%
-      purrr::map(safely(~usgs_stats_fun(., type = 'yearly'))) %>%
+      purrr::map(safely(~usgs_stats_fun(., type = 'yearly', verbose = verbose))) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%
@@ -1398,14 +1434,16 @@ site_station_days <- tibble(sites = sites,
 #' Prepping Peaks
 #'
 #' @param site_no A \code{character} USGS NWIS site.
+#' @param wy_month a water year to filter by
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #'
 #' @return a data.frame with instantaneous peaks from USGS
 #' @noRd
-peaks_USGS <- function(site_no, wy_month){
+peaks_USGS <- function(site_no, wy_month, verbose){
 
  final_data <- dataRetrieval::readNWISpeak(site_no)%>% select(peak_va, peak_dt, site_no) %>%
                mutate(wy = waterYear(peak_dt, wy_month, TRUE))
-
+if(isTRUE(verbose)){
   if(nrow(final_data) < 1){
 
     cli::cli_alert_warning('{usethis::ui_field(dplyr::slice(final_data, n = 1)$site_no)} ran into an error.')
@@ -1415,7 +1453,7 @@ peaks_USGS <- function(site_no, wy_month){
     cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$site_no)} {usethis::ui_value("peak flows")} were successfully downloaded.')
 
   }
-
+}
   final_data
 
 
@@ -1447,12 +1485,14 @@ pad_zero_for_logging <- function(data){
 #'
 #' @param data data.frame
 #' @param parallel whether to use future_map or not
+#' @param wy_month a water year to filter by
+#' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... other stuff to pass to future_map
 #'
 #' @return a df with peaks by water year
 #' @noRd
 
-adding_peaks_to_df <- function(data, parallel,wy_month, ...) {
+adding_peaks_to_df <- function(data, parallel,wy_month,verbose, ...) {
 
 peak_sites <- data.frame(peaks = unique(data$site_no))
 
@@ -1461,7 +1501,7 @@ if(isTRUE(parallel)){
 
   peaks <- peak_sites %>%
             split(.$peaks) %>%
-            furrr::future_map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month)), ...) %>%
+            furrr::future_map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month, verbose = verbose)), ...) %>%
             purrr::keep(~length(.) != 0) %>%
             purrr::map(~.x[['result']]) %>%
             plyr::rbind.fill()
@@ -1470,7 +1510,7 @@ if(isTRUE(parallel)){
 
   peaks <- peak_sites %>%
             split(.$peaks) %>%
-            purrr::map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month))) %>%
+            purrr::map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month, verbose = verbose))) %>%
             purrr::keep(~length(.) != 0) %>%
             purrr::map(~.x[['result']]) %>%
             plyr::rbind.fill()

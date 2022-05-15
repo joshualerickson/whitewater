@@ -208,7 +208,12 @@ test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
 
   yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
                                   options = wwOptions(date_range = 'date_range',
-                                  dates = c('2022-03-01', '2022-05-11')))
+                                  dates = c('2022-03-01', '2022-05-11')), verbose = F)
+  expect_equal(nrow(yaak_river_iv), 1704)
+
+  yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
+                                  options = wwOptions(date_range = 'date_range',
+                                                      dates = c('2022-03-01', '2022-05-11')))
   expect_equal(nrow(yaak_river_iv), 1704)
 
   #change the floor value
@@ -241,7 +246,14 @@ test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
   yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv,
                                         options = wwOptions(date_range = 'recent',
                                                             dates = c('2022-03-01', '2022-05-11'),
-                                                            floor_iv = '2-hour'))
+                                                            floor_iv = '2-hour'), verbose = F)
+
+  expect_equal(nrow(yaak_river_iv), 1)
+
+  yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv,
+                                        options = wwOptions(date_range = 'recent',
+                                                            dates = c('2022-03-01', '2022-05-11'),
+                                                            floor_iv = '2-hour'), verbose = T)
 
   expect_equal(nrow(yaak_river_iv), 1)
 
@@ -255,3 +267,43 @@ test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
 
 
 })
+
+
+
+test_that("usgs flow with verbose off", {
+
+  yaak_dv <- ww_dvUSGS('12304500', verbose = F)
+
+  expect_error(expect_equal(yaak_dv[1,]$site_no, '1204500'))
+
+  expect_equal(yaak_dv[1,]$site_no, '12304500')
+
+  yaak_wy <- ww_wyUSGS(yaak_dv, verbose = F)
+
+  expect_equal(yaak_wy %>%
+                 dplyr::filter(wy == 1967) %>%
+                 dplyr::pull(peak_va), 10200)
+
+  yaak_wym <- ww_wymUSGS(yaak_dv, verbose = F)
+
+  expect_equal(yaak_wym %>%
+                 dplyr::filter(wy == 1982) %>%
+                 nrow(), 12
+  )
+  yaak_month <- ww_monthUSGS(yaak_dv, verbose = F)
+
+  expect_equal(nrow(yaak_month), 12)
+
+
+  yaak_reportdv <- ww_reportUSGSdv(yaak_dv, days = 11, verbose = F)
+
+  expect_equal(nrow(yaak_reportdv), 12)
+
+  yaak_reportmv <- ww_reportUSGSmv(yaak_dv, verbose = F)
+
+  expect_equal(yaak_reportmv %>%
+                 dplyr::filter(year_nu == 2021, month == 6) %>%
+                 dplyr::pull(mean_value), 846.5)
+
+})
+

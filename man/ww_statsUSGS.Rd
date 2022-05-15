@@ -11,6 +11,7 @@ ww_statsUSGS(
   parameter_cd = NULL,
   days = 10,
   parallel = FALSE,
+  verbose = TRUE,
   ...
 )
 }
@@ -26,6 +27,8 @@ ww_statsUSGS(
 \item{days}{A \code{numeric} input of days to go back from today (only needed if using .temporalFilter = 'daily').}
 
 \item{parallel}{\code{logical} indicating whether to use future_map().}
+
+\item{verbose}{\code{logical} for printing information. TRUE (default).}
 
 \item{...}{arguments to pass on to \link[furrr]{future_map}.}
 }

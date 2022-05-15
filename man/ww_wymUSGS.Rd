@@ -4,7 +4,7 @@
 \alias{ww_wymUSGS}
 \title{Water Year & Monthly Stats (USGS)}
 \usage{
-ww_wymUSGS(procDV, sites = NULL, parallel = FALSE, ...)
+ww_wymUSGS(procDV, sites = NULL, parallel = FALSE, verbose = TRUE, ...)
 }
 \arguments{
 \item{procDV}{A previously created \link[whitewater]{ww_dvUSGS} object.}
@@ -12,6 +12,8 @@ ww_wymUSGS(procDV, sites = NULL, parallel = FALSE, ...)
 \item{sites}{A \code{character} vector with NWIS site numbers (optional).}
 
 \item{parallel}{\code{logical} indicating whether to use future_map().}
+
+\item{verbose}{\code{logical} for printing information. TRUE (default).}
 
 \item{...}{arguments to pass on to \link[furrr]{future_map} and \link[whitewater]{ww_dvUSGS}.}
 }
