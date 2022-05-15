@@ -82,7 +82,7 @@ per water year per month.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">ww_wymUSGS</span><span class="op">(</span><span class="va">procDV</span>, sites <span class="op">=</span> <span class="cn">NULL</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">ww_wymUSGS</span><span class="op">(</span><span class="va">procDV</span>, sites <span class="op">=</span> <span class="cn">NULL</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -93,6 +93,8 @@ per water year per month.</p>
 <dd><p>A <code>character</code> vector with NWIS site numbers (optional).</p></dd>
 <dt>parallel</dt>
 <dd><p><code>logical</code> indicating whether to use future_map().</p></dd>
+<dt>verbose</dt>
+<dd><p><code>logical</code> for printing information. TRUE (default).</p></dd>
 <dt>...</dt>
 <dd><p>arguments to pass on to <a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">future_map</a> and <a href="ww_dvUSGS.html">ww_dvUSGS</a>.</p></dd>
 </dl></div>

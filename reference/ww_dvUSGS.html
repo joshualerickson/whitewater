@@ -88,6 +88,7 @@ added variables like water year, lat/lon, station name, altitude and tidied date
   stat_cd <span class="op">=</span> <span class="st">"00003"</span>,
   parallel <span class="op">=</span> <span class="cn">FALSE</span>,
   wy_month <span class="op">=</span> <span class="fl">10</span>,
+  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
   <span class="va">...</span>
 <span class="op">)</span></code></pre></div>
     </div>
@@ -108,6 +109,8 @@ added variables like water year, lat/lon, station name, altitude and tidied date
 <dd><p><code>logical</code> indicating whether to use future_map().</p></dd>
 <dt>wy_month</dt>
 <dd><p><code>numeric</code> indicating the start month of the water year. e.g. 10 (default).</p></dd>
+<dt>verbose</dt>
+<dd><p><code>logical</code> for printing information. TRUE (default).</p></dd>
 <dt>...</dt>
 <dd><p>arguments to pass on to <a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">future_map</a>.</p></dd>
 </dl></div>

@@ -87,6 +87,7 @@ statistics like quantiles/percentiles.</p>
   parameter_cd <span class="op">=</span> <span class="cn">NULL</span>,
   days <span class="op">=</span> <span class="fl">10</span>,
   parallel <span class="op">=</span> <span class="cn">FALSE</span>,
+  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
   <span class="va">...</span>
 <span class="op">)</span></code></pre></div>
     </div>
@@ -105,6 +106,8 @@ statistics like quantiles/percentiles.</p>
 <dd><p>A <code>numeric</code> input of days to go back from today (only needed if using .temporalFilter = 'daily').</p></dd>
 <dt>parallel</dt>
 <dd><p><code>logical</code> indicating whether to use future_map().</p></dd>
+<dt>verbose</dt>
+<dd><p><code>logical</code> for printing information. TRUE (default).</p></dd>
 <dt>...</dt>
 <dd><p>arguments to pass on to <a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">future_map</a>.</p></dd>
 </dl></div>

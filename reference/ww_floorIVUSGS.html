@@ -88,6 +88,7 @@ and then floors to a user defined interval with <a href="wwOptions.html">wwOptio
   parameter_cd <span class="op">=</span> <span class="cn">NULL</span>,
   options <span class="op">=</span> <span class="fu"><a href="wwOptions.html">wwOptions</a></span><span class="op">(</span><span class="op">)</span>,
   parallel <span class="op">=</span> <span class="cn">FALSE</span>,
+  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
   <span class="va">...</span>
 <span class="op">)</span></code></pre></div>
     </div>
@@ -104,6 +105,8 @@ and then floors to a user defined interval with <a href="wwOptions.html">wwOptio
 <dd><p>A <a href="wwOptions.html">wwOptions</a> call.</p></dd>
 <dt>parallel</dt>
 <dd><p><code>logical</code> indicating whether to use future_map().</p></dd>
+<dt>verbose</dt>
+<dd><p><code>logical</code> for printing information. TRUE (default).</p></dd>
 <dt>...</dt>
 <dd><p>arguments to pass on to <a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">future_map</a>.</p></dd>
 </dl></div>
