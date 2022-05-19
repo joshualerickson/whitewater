@@ -14,6 +14,14 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Intro  
+
+This vignette will go over a few ways on how to use the `ww_dvUSGS()` function. It is essentially the same as `dataRetrieval::readNWISdv()` but adds a few options like `parallel` and `wy_month`. So feel free to use it the same way but remember the output style (`tibble()`) and structure will look different (as it should) albeit the results are the same, i.e. just doing some styling/tidying.  
+
+## Get DV  
+
+Here we're going to get daily values from the USGS station `12304500`. This is the Yaak River, near Troy, MT. A great river to go _whitewater_ kayaking. All we need to do is provide the site id and this will give us the default. The default arguments are
+
 ```{r setup}
 library(whitewater)
 ```
