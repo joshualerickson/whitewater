@@ -80,36 +80,51 @@ statistics like quantiles/percentiles.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">ww_statsUSGS</span><span class="op">(</span>
-  <span class="va">procDV</span>,
-  sites <span class="op">=</span> <span class="cn">NULL</span>,
-  temporalFilter <span class="op">=</span> <span class="st">"daily"</span>,
-  parameter_cd <span class="op">=</span> <span class="cn">NULL</span>,
-  days <span class="op">=</span> <span class="fl">10</span>,
-  parallel <span class="op">=</span> <span class="cn">FALSE</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ww_statsUSGS</span><span class="op">(</span></span>
+<span>  <span class="va">procDV</span>,</span>
+<span>  sites <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  temporalFilter <span class="op">=</span> <span class="st">"daily"</span>,</span>
+<span>  parameter_cd <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  days <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>procDV</dt>
 <dd><p>A previously created <a href="ww_dvUSGS.html">ww_dvUSGS</a> object.</p></dd>
+
+
 <dt>sites</dt>
 <dd><p>A <code>character</code> USGS NWIS site.</p></dd>
+
+
 <dt>temporalFilter</dt>
 <dd><p>A <code>character</code> for the stat summary window, e.g. 'daily' (default), 'monthly', 'yearly'.</p></dd>
+
+
 <dt>parameter_cd</dt>
 <dd><p>A USGS code parameter code, only if using <code>sites</code> argument.</p></dd>
+
+
 <dt>days</dt>
 <dd><p>A <code>numeric</code> input of days to go back from today (only needed if using .temporalFilter = 'daily').</p></dd>
+
+
 <dt>parallel</dt>
 <dd><p><code>logical</code> indicating whether to use future_map().</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p><code>logical</code> for printing information. TRUE (default).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>arguments to pass on to <a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">future_map</a>.</p></dd>
+
 </dl></div>
     <div id="note">
     <h2>Note</h2>
@@ -120,24 +135,24 @@ The <code>.temporalFilter</code> argument is used to generate the window of perc
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"><span class="co"># get by date range</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">#daily</span></span>
-<span class="r-in"><span class="va">yaak_river_stats</span> <span class="op">&lt;-</span> <span class="fu">ww_statsUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
-<span class="r-in">                                 temporalFilter <span class="op">=</span> <span class="st">'daily'</span>,</span>
-<span class="r-in">                                 days <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span class="r-in"><span class="co">#monthly</span></span>
-<span class="r-in"><span class="va">yaak_river_stats</span> <span class="op">&lt;-</span> <span class="fu">ww_statsUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
-<span class="r-in">                                 temporalFilter <span class="op">=</span> <span class="st">'monthly'</span>,</span>
-<span class="r-in">                                 days <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span class="r-in"><span class="co">#yearly</span></span>
-<span class="r-in"><span class="va">yaak_river_stats</span> <span class="op">&lt;-</span> <span class="fu">ww_statsUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
-<span class="r-in">                                 temporalFilter <span class="op">=</span> <span class="st">'yearly'</span>,</span>
-<span class="r-in">                                 days <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span><span class="co"># get by date range</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#daily</span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_stats</span> <span class="op">&lt;-</span> <span class="fu">ww_statsUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span></span>
+<span class="r-in"><span>                                 temporalFilter <span class="op">=</span> <span class="st">'daily'</span>,</span></span>
+<span class="r-in"><span>                                 days <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">#monthly</span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_stats</span> <span class="op">&lt;-</span> <span class="fu">ww_statsUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span></span>
+<span class="r-in"><span>                                 temporalFilter <span class="op">=</span> <span class="st">'monthly'</span>,</span></span>
+<span class="r-in"><span>                                 days <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">#yearly</span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_stats</span> <span class="op">&lt;-</span> <span class="fu">ww_statsUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span></span>
+<span class="r-in"><span>                                 temporalFilter <span class="op">=</span> <span class="st">'yearly'</span>,</span></span>
+<span class="r-in"><span>                                 days <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -152,7 +167,7 @@ The <code>.temporalFilter</code> argument is used to generate the window of perc
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
       </footer></div>

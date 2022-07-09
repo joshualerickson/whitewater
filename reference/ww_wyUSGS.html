@@ -82,25 +82,36 @@ area, scaled by log and standard deviation) per water year.</p>
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">ww_wyUSGS</span><span class="op">(</span><span class="va">procDV</span>, sites <span class="op">=</span> <span class="cn">NULL</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ww_wyUSGS</span><span class="op">(</span><span class="va">procDV</span>, sites <span class="op">=</span> <span class="cn">NULL</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span>, verbose <span class="op">=</span> <span class="cn">TRUE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>procDV</dt>
 <dd><p>A previously created <a href="ww_dvUSGS.html">ww_dvUSGS</a> object.</p></dd>
+
+
 <dt>sites</dt>
 <dd><p>A <code>character</code> vector with NWIS site numbers (optional).</p></dd>
+
+
 <dt>parallel</dt>
 <dd><p><code>logical</code> indicating whether to use future_map().</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p><code>logical</code> for printing information. TRUE (default).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>arguments to pass on to <a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">future_map</a> and/or <a href="ww_dvUSGS.html">ww_dvUSGS</a>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A <code>tibble</code> filtered by water year with added meta-data.</p>
+    
+
+<p>A <code>tibble</code> filtered by water year with added meta-data.</p>
     </div>
     <div id="note">
     <h2>Note</h2>
@@ -110,37 +121,37 @@ provide a <code>sites</code> vector. This will run <a href="ww_dvUSGS.html">ww_d
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshualerickson/whitewater/" class="external-link">whitewater</a></span><span class="op">)</span></span>
-<span class="r-in"><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span>,</span>
-<span class="r-in">parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,</span>
-<span class="r-in">wy_month <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">yaak_river_wy</span> <span class="op">&lt;-</span> <span class="fu">ww_wyUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">#parallel</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">#get sites</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">huc17_sites</span> <span class="op">&lt;-</span> <span class="fu">dataRetrieval</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/dataRetrieval/man/whatNWISdata.html" class="external-link">whatNWISdata</a></span><span class="op">(</span>huc <span class="op">=</span> <span class="fl">17</span>,</span>
-<span class="r-in">siteStatus <span class="op">=</span> <span class="st">'active'</span>,</span>
-<span class="r-in">service <span class="op">=</span> <span class="st">'dv'</span>,</span>
-<span class="r-in">parameterCd <span class="op">=</span> <span class="st">'00060'</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
-<span class="r-in"><span class="co">#need to call future::plan()</span></span>
-<span class="r-in"><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span><span class="op">(</span>workers <span class="op">=</span> <span class="fu"><a href="https://future.futureverse.org/reference/re-exports.html" class="external-link">availableCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">pnw_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="va">huc17_sites</span><span class="op">$</span><span class="va">site_no</span>,</span>
-<span class="r-in">parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,</span>
-<span class="r-in">wy_month <span class="op">=</span> <span class="fl">10</span>,</span>
-<span class="r-in">parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">pnw_wy</span> <span class="op">&lt;-</span> <span class="fu">ww_wyUSGS</span><span class="op">(</span><span class="va">pnw_dv</span>,</span>
-<span class="r-in">                    parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
-<span class="r-in"></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshualerickson/whitewater/" class="external-link">whitewater</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span>,</span></span>
+<span class="r-in"><span>parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,</span></span>
+<span class="r-in"><span>wy_month <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_wy</span> <span class="op">&lt;-</span> <span class="fu">ww_wyUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#parallel</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#get sites</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">huc17_sites</span> <span class="op">&lt;-</span> <span class="fu">dataRetrieval</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/dataRetrieval/man/whatNWISdata.html" class="external-link">whatNWISdata</a></span><span class="op">(</span>huc <span class="op">=</span> <span class="fl">17</span>,</span></span>
+<span class="r-in"><span>siteStatus <span class="op">=</span> <span class="st">'active'</span>,</span></span>
+<span class="r-in"><span>service <span class="op">=</span> <span class="st">'dv'</span>,</span></span>
+<span class="r-in"><span>parameterCd <span class="op">=</span> <span class="st">'00060'</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co">#need to call future::plan()</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span><span class="op">(</span>workers <span class="op">=</span> <span class="fu"><a href="https://parallelly.futureverse.org/reference/availableCores.html" class="external-link">availableCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">pnw_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="va">huc17_sites</span><span class="op">$</span><span class="va">site_no</span>,</span></span>
+<span class="r-in"><span>parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,</span></span>
+<span class="r-in"><span>wy_month <span class="op">=</span> <span class="fl">10</span>,</span></span>
+<span class="r-in"><span>parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">pnw_wy</span> <span class="op">&lt;-</span> <span class="fu">ww_wyUSGS</span><span class="op">(</span><span class="va">pnw_dv</span>,</span></span>
+<span class="r-in"><span>                    parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -155,7 +166,7 @@ provide a <code>sites</code> vector. This will run <a href="ww_dvUSGS.html">ww_d
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
       </footer></div>

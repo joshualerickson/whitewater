@@ -78,14 +78,14 @@
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">wwOptions</span><span class="op">(</span>
-  date_range <span class="op">=</span> <span class="st">"pfn"</span>,
-  period <span class="op">=</span> <span class="fl">11</span>,
-  dates <span class="op">=</span> <span class="cn">NULL</span>,
-  site_status <span class="op">=</span> <span class="st">"all"</span>,
-  floor_iv <span class="op">=</span> <span class="st">"1 hour"</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">wwOptions</span><span class="op">(</span></span>
+<span>  date_range <span class="op">=</span> <span class="st">"pfn"</span>,</span>
+<span>  period <span class="op">=</span> <span class="fl">11</span>,</span>
+<span>  dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  site_status <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  floor_iv <span class="op">=</span> <span class="st">"1 hour"</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -93,22 +93,35 @@
     <dl><dt>date_range</dt>
 <dd><p>A <code>character</code>. Indicating how to call the API. 'pfn' = Period from now,
 'date_range' = a date range, "recent" = the most recent value.</p></dd>
+
+
 <dt>period</dt>
 <dd><p>A <code>numeric</code>. Return all values from a period from now (only if 'pfn' is used).</p></dd>
+
+
 <dt>dates</dt>
 <dd><p>A <code>vector</code>. Return all values within an absolute date range (start and end dates).
 Only if 'date_range' is used.</p></dd>
+
+
 <dt>site_status</dt>
 <dd><p>A <code>character</code> indicating site status. Example, 'all' = both active and inactive,
 'active' = only active sites, 'inactive' = only inactive sites.</p></dd>
+
+
 <dt>floor_iv</dt>
 <dd><p>A <code>character</code> on how to floor the instantaneous values, '1 hour' (default).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>other options used for options.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A list with API options.</p>
+    
+
+<p>A list with API options.</p>
     </div>
     <div id="note">
     <h2>Note</h2>
@@ -118,41 +131,41 @@ it has collected discrete (manually collected) data within 397 days (13 months).
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshualerickson/whitewater/" class="external-link">whitewater</a></span><span class="op">)</span></span>
-<span class="r-in"><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span>,</span>
-<span class="r-in">parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,</span>
-<span class="r-in">wy_month <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">yaak_river_iv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">#change floor method</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">yaak_river_iv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
-<span class="r-in">                                options <span class="op">=</span> <span class="fu">wwOptions</span><span class="op">(</span>floor_iv <span class="op">=</span> <span class="st">'6-hour'</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co">#change number of days</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">yaak_river_iv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
-<span class="r-in">                                options <span class="op">=</span> <span class="fu">wwOptions</span><span class="op">(</span>floor_iv <span class="op">=</span> <span class="st">'2-hour'</span>,</span>
-<span class="r-in">                                                    period <span class="op">=</span> <span class="fl">365</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># get by date range</span></span>
-<span class="r-in"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">yaak_river_wy</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
-<span class="r-in">                                options <span class="op">=</span> <span class="fu">wwOptions</span><span class="op">(</span>date_range <span class="op">=</span> <span class="st">'date_range'</span>,</span>
-<span class="r-in">                                                    dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'2022-03-01'</span>, <span class="st">'2022-05-11'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="co"># site status as 'active'</span></span>
-<span class="r-in"></span>
-<span class="r-in"><span class="va">yaak_river_wy</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
-<span class="r-in">                                options <span class="op">=</span> <span class="fu">wwOptions</span><span class="op">(</span>site_status <span class="op">=</span> <span class="st">'active'</span>,</span>
-<span class="r-in">                                                    date_range <span class="op">=</span> <span class="st">'date_range'</span>,</span>
-<span class="r-in">                                                    dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'2022-03-01'</span>, <span class="st">'2022-05-11'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span class="r-in"><span class="op">}</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshualerickson/whitewater/" class="external-link">whitewater</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span>,</span></span>
+<span class="r-in"><span>parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,</span></span>
+<span class="r-in"><span>wy_month <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_iv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#change floor method</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_iv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span></span>
+<span class="r-in"><span>                                options <span class="op">=</span> <span class="fu">wwOptions</span><span class="op">(</span>floor_iv <span class="op">=</span> <span class="st">'6-hour'</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">#change number of days</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_iv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span></span>
+<span class="r-in"><span>                                options <span class="op">=</span> <span class="fu">wwOptions</span><span class="op">(</span>floor_iv <span class="op">=</span> <span class="st">'2-hour'</span>,</span></span>
+<span class="r-in"><span>                                                    period <span class="op">=</span> <span class="fl">365</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># get by date range</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_wy</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span></span>
+<span class="r-in"><span>                                options <span class="op">=</span> <span class="fu">wwOptions</span><span class="op">(</span>date_range <span class="op">=</span> <span class="st">'date_range'</span>,</span></span>
+<span class="r-in"><span>                                                    dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'2022-03-01'</span>, <span class="st">'2022-05-11'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># site status as 'active'</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">yaak_river_wy</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_floorIVUSGS.html">ww_floorIVUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span></span>
+<span class="r-in"><span>                                options <span class="op">=</span> <span class="fu">wwOptions</span><span class="op">(</span>site_status <span class="op">=</span> <span class="st">'active'</span>,</span></span>
+<span class="r-in"><span>                                                    date_range <span class="op">=</span> <span class="st">'date_range'</span>,</span></span>
+<span class="r-in"><span>                                                    dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'2022-03-01'</span>, <span class="st">'2022-05-11'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>
     </div>
   </div>
@@ -167,7 +180,7 @@ it has collected discrete (manually collected) data within 397 days (13 months).
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
       </footer></div>

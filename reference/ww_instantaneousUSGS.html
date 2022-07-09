@@ -80,37 +80,52 @@ https://waterservices.usgs.gov/nwis/iv/."><!-- mathjax --><script src="https://c
     </div>
 
     <div id="ref-usage">
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="fu">ww_instantaneousUSGS</span><span class="op">(</span>
-  <span class="va">procDV</span>,
-  sites <span class="op">=</span> <span class="cn">NULL</span>,
-  parameter_cd <span class="op">=</span> <span class="cn">NULL</span>,
-  options <span class="op">=</span> <span class="fu"><a href="wwOptions.html">wwOptions</a></span><span class="op">(</span><span class="op">)</span>,
-  parallel <span class="op">=</span> <span class="cn">FALSE</span>,
-  verbose <span class="op">=</span> <span class="cn">TRUE</span>,
-  <span class="va">...</span>
-<span class="op">)</span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ww_instantaneousUSGS</span><span class="op">(</span></span>
+<span>  <span class="va">procDV</span>,</span>
+<span>  sites <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parameter_cd <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  options <span class="op">=</span> <span class="fu"><a href="wwOptions.html">wwOptions</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
     <h2>Arguments</h2>
     <dl><dt>procDV</dt>
 <dd><p>A previously created <a href="ww_dvUSGS.html">ww_dvUSGS</a> object.</p></dd>
+
+
 <dt>sites</dt>
 <dd><p>A <code>vector</code> of USGS NWIS sites. <code>optional</code></p></dd>
+
+
 <dt>parameter_cd</dt>
 <dd><p>A USGS code parameter code, only if using <code>sites</code> argument.</p></dd>
+
+
 <dt>options</dt>
 <dd><p>A <a href="wwOptions.html">wwOptions</a> call.</p></dd>
+
+
 <dt>parallel</dt>
 <dd><p><code>logical</code> indicating whether to use future_map().</p></dd>
+
+
 <dt>verbose</dt>
 <dd><p><code>logical</code> for printing information. TRUE (default).</p></dd>
+
+
 <dt>...</dt>
 <dd><p>arguments to pass on to <a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">future_map</a>.</p></dd>
+
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A <code>tibble</code> with instantaneous values.</p>
+    
+
+<p>A <code>tibble</code> with instantaneous values.</p>
     </div>
     <div id="note">
     <h2>Note</h2>
@@ -135,7 +150,7 @@ provide a <code>sites</code> vector. This will run <a href="ww_dvUSGS.html">ww_d
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
       </footer></div>

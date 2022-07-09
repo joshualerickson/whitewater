@@ -98,12 +98,17 @@
 <!-- badges: start -->
 <p>The goal of whitewater is to provide sequential and parallel processing for USGS stations in a tidy-style format. This package allows user to <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan()</a></code> their choice of parallel processing and then use the argument <code>parallel = TRUE</code> in whitewater function calls. The package also puts every output in a <code>tibble</code> with data munging of sites, parameter and stat codes, which results in a <strong>tidy</strong> style data frame.</p>
 <div class="section level2">
+<h2 id="attention">Attention!<a class="anchor" aria-label="anchor" href="#attention"></a>
+</h2>
+<p><strong>Please, due to potentially crashing (USGS Water Services)[<a href="https://waterservices.usgs.gov/" class="external-link uri">https://waterservices.usgs.gov/</a>] REST services keep your parallel processing to 10 cores/workers or less. By following this limit, we can still benefit from parallel processing but also being mindful/respectful to the USGS Water Services via <a href="https://github.com/USGS-R/dataRetrieval" class="external-link">{dataRetrieval}</a> and REST services. Thank you!</strong></p>
+</div>
+<div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <p>You can install the development version of whitewater from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co"># install.packages("devtools")</span>
-<span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"joshualerickson/whitewater"</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"joshualerickson/whitewater"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
@@ -113,65 +118,68 @@
 <h3 id="running-in-parallel">Running in parallel<a class="anchor" aria-label="anchor" href="#running-in-parallel"></a>
 </h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshualerickson/whitewater/" class="external-link">whitewater</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org" class="external-link">tidyverse</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span>
-<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pubs.usgs.gov/tm/04/a10/" class="external-link">dataRetrieval</a></span><span class="op">)</span>
-
-<span class="va">huc17_sites</span> <span class="op">&lt;-</span> <span class="fu">dataRetrieval</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/dataRetrieval/man/whatNWISdata.html" class="external-link">whatNWISdata</a></span><span class="op">(</span>huc <span class="op">=</span> <span class="fl">17</span>,
-                                           siteStatus <span class="op">=</span> <span class="st">'active'</span>,
-                                           service <span class="op">=</span> <span class="st">'dv'</span>,
-                                           parameterCd <span class="op">=</span> <span class="st">'00060'</span>,
-                                           drainAreaMax <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span>
-<span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"# of sites: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">huc17_sites</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; # of sites:  677</span>
-
-<span class="fu">st_as_sf</span><span class="op">(</span><span class="va">huc17_sites</span>, coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'dec_long_va'</span>, <span class="st">'dec_lat_va'</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">ggplot</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">geom_sf</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">borders</span><span class="op">(</span><span class="st">'state'</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">130</span>, <span class="op">-</span><span class="fl">110</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">50</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshualerickson/whitewater/" class="external-link">whitewater</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org" class="external-link">tidyverse</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pubs.usgs.gov/tm/04/a10/" class="external-link">dataRetrieval</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">huc17_sites</span> <span class="op">&lt;-</span> <span class="fu">dataRetrieval</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/dataRetrieval/man/whatNWISdata.html" class="external-link">whatNWISdata</a></span><span class="op">(</span>huc <span class="op">=</span> <span class="fl">17</span>,</span>
+<span>                                           siteStatus <span class="op">=</span> <span class="st">'active'</span>,</span>
+<span>                                           service <span class="op">=</span> <span class="st">'dv'</span>,</span>
+<span>                                           parameterCd <span class="op">=</span> <span class="st">'00060'</span>,</span>
+<span>                                           drainAreaMax <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"# of sites: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">huc17_sites</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # of sites:  676</span></span>
+<span></span>
+<span><span class="fu">st_as_sf</span><span class="op">(</span><span class="va">huc17_sites</span>, coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'dec_long_va'</span>, <span class="st">'dec_lat_va'</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> </span>
+<span>  <span class="fu">ggplot</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu">geom_sf</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">borders</span><span class="op">(</span><span class="st">'state'</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">130</span>, <span class="op">-</span><span class="fl">110</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">50</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-2-1.png" width="75%" style="display: block; margin: auto;"></p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="co">#need to call future::plan()</span>
-<span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span><span class="op">(</span>workers <span class="op">=</span> <span class="fu"><a href="https://future.futureverse.org/reference/re-exports.html" class="external-link">availableCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>
-
-<span class="co">#running on 11 cores</span>
-
-<span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span>
-<span class="va">pnw_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="reference/ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="va">huc17_sites</span><span class="op">$</span><span class="va">site_no</span>,
-                    parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,
-                    wy_month <span class="op">=</span> <span class="fl">10</span>,
-                    parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>
-<span class="op">}</span><span class="op">)</span>
-<span class="co">#&gt;    user  system elapsed </span>
-<span class="co">#&gt;   25.69    1.98  201.12</span>
-
-<span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pnw_dv</span><span class="op">)</span>
-<span class="co">#&gt; [1] 11681517</span>
-
-<span class="va">pnw_dv</span>
-<span class="co">#&gt; # A tibble: 11,681,517 x 24</span>
-<span class="co">#&gt;    agency_cd site_no  Date        Flow Flow_cd drainage_area Station   lat  long</span>
-<span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;    &lt;date&gt;     &lt;dbl&gt; &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;</span>
-<span class="co">#&gt;  1 USGS      10396000 1911-04-01   160 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  2 USGS      10396000 1911-04-02   166 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  3 USGS      10396000 1911-04-03   173 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  4 USGS      10396000 1911-04-04   180 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  5 USGS      10396000 1911-04-05   187 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  6 USGS      10396000 1911-04-06   232 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  7 USGS      10396000 1911-04-07   207 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  8 USGS      10396000 1911-04-08   182 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  9 USGS      10396000 1911-04-09   157 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt; 10 USGS      10396000 1911-04-10   132 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt; # ... with 11,681,507 more rows, and 15 more variables: altitude &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   STILLING.WELL_Flow &lt;dbl&gt;, STILLING.WELL_Flow_cd &lt;chr&gt;,</span>
-<span class="co">#&gt; #   .Estimated.By.Regression._Flow &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   .Estimated.By.Regression._Flow_cd &lt;chr&gt;, ..2.._Flow &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   ..2.._Flow_cd &lt;chr&gt;, .Discharge.1921.to.1952._Flow &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   .Discharge.1921.to.1952._Flow_cd &lt;chr&gt;, year &lt;dbl&gt;, month &lt;dbl&gt;, day &lt;int&gt;,</span>
-<span class="co">#&gt; #   month_day &lt;chr&gt;, wy &lt;int&gt;, month_abb &lt;fct&gt;</span></code></pre></div>
+<code class="sourceCode R"><span><span class="co">#need to call future::plan()</span></span>
+<span></span>
+<span><span class="co">##### Remember, please use 10 or less workers #####</span></span>
+<span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span><span class="op">(</span>workers <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co">#running on 11 cores</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span></span>
+<span><span class="va">pnw_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="va">huc17_sites</span><span class="op">$</span><span class="va">site_no</span>,</span>
+<span>                    parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,</span>
+<span>                    wy_month <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>                    parallel <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>                    verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    user  system elapsed </span></span>
+<span><span class="co">#&gt;   39.62    3.00  475.62</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pnw_dv</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 11714373</span></span>
+<span></span>
+<span><span class="va">pnw_dv</span></span>
+<span><span class="co">#&gt; # A tibble: 11,714,373 x 25</span></span>
+<span><span class="co">#&gt;    agency_cd site_no  Date        Flow Flow_cd drainage_area Station   lat  long</span></span>
+<span><span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;    &lt;date&gt;     &lt;dbl&gt; &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;  1 USGS      10396000 1911-04-01   160 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt;  2 USGS      10396000 1911-04-02   166 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt;  3 USGS      10396000 1911-04-03   173 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt;  4 USGS      10396000 1911-04-04   180 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt;  5 USGS      10396000 1911-04-05   187 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt;  6 USGS      10396000 1911-04-06   232 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt;  7 USGS      10396000 1911-04-07   207 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt;  8 USGS      10396000 1911-04-08   182 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt;  9 USGS      10396000 1911-04-09   157 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt; 10 USGS      10396000 1911-04-10   132 A                 200 DONNER~  42.8 -119.</span></span>
+<span><span class="co">#&gt; # ... with 11,714,363 more rows, and 16 more variables: altitude &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   STILLING.WELL_Flow &lt;dbl&gt;, STILLING.WELL_Flow_cd &lt;chr&gt;,</span></span>
+<span><span class="co">#&gt; #   .Estimated.By.Regression._Flow &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   .Estimated.By.Regression._Flow_cd &lt;chr&gt;, ..2.._Flow &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   ..2.._Flow_cd &lt;chr&gt;, .Discharge.1921.to.1952._Flow &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   .Discharge.1921.to.1952._Flow_cd &lt;chr&gt;, year &lt;dbl&gt;, month &lt;dbl&gt;, day &lt;int&gt;,</span></span>
+<span><span class="co">#&gt; #   month_day &lt;chr&gt;, wy &lt;int&gt;, month_abb &lt;fct&gt;, obs_per_wy &lt;int&gt;</span></span></code></pre></div>
 <p>Now we can use other <code>ww_</code> functions to filter the data by water year, month, water year and month, as well as stat reporting (percentiles comparing current readings).</p>
 </div>
 <div class="section level3">
@@ -179,32 +187,57 @@
 </h3>
 <p>Same as above, we can just call <code>parallel = TRUE</code> to run in parallel since we’ll be getting peak flows from <code><a href="https://rdrr.io/pkg/dataRetrieval/man/readNWISpeak.html" class="external-link">dataRetrieval::readNWISpeak()</a></code>.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span>
-<span class="va">pnw_wy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="reference/ww_wyUSGS.html">ww_wyUSGS</a></span><span class="op">(</span><span class="va">pnw_dv</span>,
-                                     parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
-<span class="op">}</span><span class="op">)</span>
-<span class="co">#&gt;    user  system elapsed </span>
-<span class="co">#&gt;   12.41    0.27   64.43</span>
-
-<span class="va">pnw_wy</span>
-<span class="co">#&gt; # A tibble: 32,650 x 20</span>
-<span class="co">#&gt;    Station          site_no    wy peak_va peak_dt    Flow_max Flow_min Flow_mean</span>
-<span class="co">#&gt;    &lt;chr&gt;            &lt;chr&gt;   &lt;int&gt;   &lt;dbl&gt; &lt;date&gt;        &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;</span>
-<span class="co">#&gt;  1 ABIQUA CREEK AT~ 142007~  2014      NA NA            53.2     53.2       25.6</span>
-<span class="co">#&gt;  2 ABIQUA CREEK AT~ 142007~  2015    3330 2014-12-21    17.8     17.8      199. </span>
-<span class="co">#&gt;  3 ABIQUA CREEK AT~ 142007~  2016    5980 2015-12-07     6.09     6.09     318. </span>
-<span class="co">#&gt;  4 ABIQUA CREEK AT~ 142007~  2017    3740 2017-03-09    11.9     11.9      405. </span>
-<span class="co">#&gt;  5 ABIQUA CREEK AT~ 142007~  2018    4290 2017-10-22    24.1     24.1      257. </span>
-<span class="co">#&gt;  6 ABIQUA CREEK AT~ 142007~  2019    3700 2019-04-07     8.78     8.78     201. </span>
-<span class="co">#&gt;  7 ABIQUA CREEK AT~ 142007~  2020    2600 2020-01-28    28.4     28.4      197. </span>
-<span class="co">#&gt;  8 ABIQUA CREEK AT~ 142007~  2021    5360 2020-12-20    13.1     13.1      254. </span>
-<span class="co">#&gt;  9 ABIQUA CREEK AT~ 142007~  2022      NA NA            59.7     59.7      462. </span>
-<span class="co">#&gt; 10 AHTANUM CREEK A~ 125025~  1904      NA NA           450      450        165. </span>
-<span class="co">#&gt; # ... with 32,640 more rows, and 12 more variables: Flow_median &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   Flow_stdev &lt;dbl&gt;, Flow_coef_var &lt;dbl&gt;, Flow_max_dnorm &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   Flow_min_dnorm &lt;dbl&gt;, Flow_mean_dnorm &lt;dbl&gt;, Flow_med_dnorm &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   Flow_max_sdnorm &lt;dbl&gt;, Flow_min_sdnorm &lt;dbl&gt;, Flow_mean_sdnorm &lt;dbl&gt;,</span>
-<span class="co">#&gt; #   Flow_med_sdnorm &lt;dbl&gt;, Flow_sd_norm &lt;dbl&gt;</span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span></span>
+<span><span class="va">pnw_wy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="reference/ww_wyUSGS.html">ww_wyUSGS</a></span><span class="op">(</span><span class="va">pnw_dv</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt; One or more parsing issues, see `problems()` for details</span></span>
+<span><span class="co">#&gt;    user  system elapsed </span></span>
+<span><span class="co">#&gt;   16.52    0.77   89.80</span></span>
+<span></span>
+<span><span class="va">pnw_wy</span></span>
+<span><span class="co">#&gt; # A tibble: 32,670 x 27</span></span>
+<span><span class="co">#&gt;    Station   site_no    wy peak_va peak_dt    drainage_area   lat  long altitude</span></span>
+<span><span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;   &lt;int&gt;   &lt;dbl&gt; &lt;date&gt;             &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;  1 ABIQUA C~ 142007~  2014      NA NA                  72.9  45.0 -123.      193</span></span>
+<span><span class="co">#&gt;  2 ABIQUA C~ 142007~  2015    3330 2014-12-21          72.9  45.0 -123.      193</span></span>
+<span><span class="co">#&gt;  3 ABIQUA C~ 142007~  2016    5980 2015-12-07          72.9  45.0 -123.      193</span></span>
+<span><span class="co">#&gt;  4 ABIQUA C~ 142007~  2017    3740 2017-03-09          72.9  45.0 -123.      193</span></span>
+<span><span class="co">#&gt;  5 ABIQUA C~ 142007~  2018    4290 2017-10-22          72.9  45.0 -123.      193</span></span>
+<span><span class="co">#&gt;  6 ABIQUA C~ 142007~  2019    3700 2019-04-07          72.9  45.0 -123.      193</span></span>
+<span><span class="co">#&gt;  7 ABIQUA C~ 142007~  2020    2600 2020-01-28          72.9  45.0 -123.      193</span></span>
+<span><span class="co">#&gt;  8 ABIQUA C~ 142007~  2021    5360 2020-12-20          72.9  45.0 -123.      193</span></span>
+<span><span class="co">#&gt;  9 ABIQUA C~ 142007~  2022      NA NA                  72.9  45.0 -123.      193</span></span>
+<span><span class="co">#&gt; 10 AHTANUM ~ 125025~  1904      NA NA                 173    46.5 -120.      940</span></span>
+<span><span class="co">#&gt; # ... with 32,660 more rows, and 18 more variables: obs_per_wy &lt;int&gt;,</span></span>
+<span><span class="co">#&gt; #   wy_count &lt;int&gt;, Flow_sum &lt;dbl&gt;, Flow_max &lt;dbl&gt;, Flow_min &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   Flow_mean &lt;dbl&gt;, Flow_median &lt;dbl&gt;, Flow_stdev &lt;dbl&gt;, Flow_coef_var &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   Flow_max_dnorm &lt;dbl&gt;, Flow_min_dnorm &lt;dbl&gt;, Flow_mean_dnorm &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   Flow_med_dnorm &lt;dbl&gt;, Flow_max_sdnorm &lt;dbl&gt;, Flow_min_sdnorm &lt;dbl&gt;,</span></span>
+<span><span class="co">#&gt; #   Flow_mean_sdnorm &lt;dbl&gt;, Flow_med_sdnorm &lt;dbl&gt;, Flow_sd_norm &lt;dbl&gt;</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-5-1.png" width="75%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
@@ -212,20 +245,20 @@
 </h3>
 <p>If you just want a few sites (or one) and not use parallel processing, go for it! You’ll still get the advantages of filtering and stats. In addition, You don’t always have to pipe a <code><a href="reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> object into the <code>ww_*()</code> and can just use the <code>sites</code> argument. In the example below I’ll do this but IMO its nice to start with a <code><a href="reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> object because you’ll likely come back to it.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">withlacoochee_temp_and_flow</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_wyUSGS.html">ww_wyUSGS</a></span><span class="op">(</span>sites<span class="op">=</span><span class="st">"02319394"</span>,
-                          parameter_cd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"00010"</span>, <span class="st">"00060"</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; v 'water year' was successfully downloaded.</span>
-<span class="co">#&gt; &gt; now starting to gather peak flows using dataRetrieval::readNWISpeak</span>
-<span class="co">#&gt; v 02319394 'peak flows' were successfully downloaded.</span>
-
-<span class="va">withlacoochee_temp_and_flow</span> <span class="op">%&gt;%</span> 
-  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'Wtemp_max'</span>, <span class="st">'Flow_max'</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-<span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">wy</span>, <span class="va">value</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">geom_point</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">labs</span><span class="op">(</span>x <span class="op">=</span> <span class="st">'Water Year'</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">facet_wrap</span><span class="op">(</span><span class="op">~</span><span class="va">name</span>, scale <span class="op">=</span> <span class="st">'free'</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">withlacoochee_temp_and_flow</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_wyUSGS.html">ww_wyUSGS</a></span><span class="op">(</span>sites<span class="op">=</span><span class="st">"02319394"</span>,</span>
+<span>                          parameter_cd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"00010"</span>, <span class="st">"00060"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; v 'water year' was successfully downloaded.</span></span>
+<span><span class="co">#&gt; &gt; now starting to gather peak flows using dataRetrieval::readNWISpeak</span></span>
+<span><span class="co">#&gt; v 02319394 'peak flows' were successfully downloaded.</span></span>
+<span></span>
+<span><span class="va">withlacoochee_temp_and_flow</span> <span class="op">%&gt;%</span> </span>
+<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'Wtemp_max'</span>, <span class="st">'Flow_max'</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> </span>
+<span><span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">wy</span>, <span class="va">value</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">geom_point</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu">geom_line</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">labs</span><span class="op">(</span>x <span class="op">=</span> <span class="st">'Water Year'</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">facet_wrap</span><span class="op">(</span><span class="op">~</span><span class="va">name</span>, scale <span class="op">=</span> <span class="st">'free'</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="75%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
@@ -233,30 +266,21 @@
 </h3>
 <p>Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows. The <code><a href="reference/ww_statsUSGS.html">ww_statsUSGS()</a></code> function does this for you! It takes the historical values for your parameter (flow in this example) and returns percentiles (<code><a href="https://rdrr.io/pkg/dataRetrieval/man/readNWISstat.html" class="external-link">dataRetrieval::readNWISstat()</a></code>) but also combines the current values.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span><span class="op">)</span>
-<span class="co">#&gt; v Yaak River near Troy MT 'daily' was successfully downloaded.</span>
-
-<span class="va">yaak_daily_report</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>, 
-                                  temporalFilter <span class="op">=</span> <span class="st">'daily'</span>,
-                                  days <span class="op">=</span> <span class="fl">365</span><span class="op">)</span>
-<span class="co">#&gt; v Yaak River near Troy MT 'NWIS Stat' for Temporal Filter (daily) was successfully downloaded.</span>
-<span class="co">#&gt; Warning: 105 parsing failures.</span>
-<span class="co">#&gt;   row col expected actual</span>
-<span class="co">#&gt; 22414  -- a number    Ice</span>
-<span class="co">#&gt; 22415  -- a number    Ice</span>
-<span class="co">#&gt; 22416  -- a number    Ice</span>
-<span class="co">#&gt; 22417  -- a number    Ice</span>
-<span class="co">#&gt; 22418  -- a number    Ice</span>
-<span class="co">#&gt; ..... ... ........ ......</span>
-<span class="co">#&gt; See problems(...) for more details.</span>
-<span class="va">yaak_daily_report</span> <span class="op">%&gt;%</span> 
-  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'Flow'</span>, <span class="st">'p25_va'</span>, <span class="st">'p75_va'</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> 
-  <span class="fu">ggplot</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">geom_line</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">Date</span>, <span class="va">value</span>, color <span class="op">=</span> <span class="va">name</span>, alpha <span class="op">=</span> <span class="va">name</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'p25_va'</span>, <span class="st">'p75_va'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">scale_color_manual</span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'black'</span>, <span class="st">'red'</span>, <span class="st">'blue'</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">scale_alpha_manual</span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">.25</span><span class="op">)</span>, guide <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span> <span class="op">+</span>
-  <span class="fu">labs</span><span class="op">(</span>y <span class="op">=</span> <span class="st">'Discharge (cfs)'</span>, color <span class="op">=</span> <span class="st">''</span>, title <span class="op">=</span> <span class="st">'Comparing current flow to 25th and 75th percentiles'</span><span class="op">)</span> <span class="op">+</span> 
-  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span><span class="op">)</span></span>
+<span><span class="co">#&gt; v Yaak River near Troy MT 'daily' was successfully downloaded.</span></span>
+<span></span>
+<span><span class="va">yaak_daily_report</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span><span class="va">yaak_river_dv</span>, </span>
+<span>                                  temporalFilter <span class="op">=</span> <span class="st">'daily'</span>,</span>
+<span>                                  days <span class="op">=</span> <span class="fl">365</span><span class="op">)</span></span>
+<span><span class="co">#&gt; v Yaak River near Troy MT 'NWIS Stat' for Temporal Filter (daily) was successfully downloaded.</span></span>
+<span><span class="va">yaak_daily_report</span> <span class="op">%&gt;%</span> </span>
+<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'Flow'</span>, <span class="st">'p25_va'</span>, <span class="st">'p75_va'</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span> </span>
+<span>  <span class="fu">ggplot</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu">geom_line</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">Date</span>, <span class="va">value</span>, color <span class="op">=</span> <span class="va">name</span>, alpha <span class="op">=</span> <span class="va">name</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'p25_va'</span>, <span class="st">'p75_va'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu">scale_color_manual</span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'black'</span>, <span class="st">'red'</span>, <span class="st">'blue'</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">scale_alpha_manual</span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">.5</span><span class="op">)</span>, guide <span class="op">=</span> <span class="st">'none'</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">labs</span><span class="op">(</span>y <span class="op">=</span> <span class="st">'Discharge (cfs)'</span>, color <span class="op">=</span> <span class="st">''</span>, title <span class="op">=</span> <span class="st">'Comparing current flow to 25th and 75th percentiles'</span><span class="op">)</span> <span class="op">+</span> </span>
+<span>  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-7-1.png" width="75%" style="display: block; margin: auto;"></p>
 </div>
 </div>
@@ -315,7 +339,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.3.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.5.</p>
 </div>
 
       </footer>
