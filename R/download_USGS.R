@@ -284,7 +284,7 @@ if(missing(procDV)) {
                       slice_head(n=1) %>%
                       ungroup() %>%
                       dt_to_tibble() %>%
-                      dplyr::left_join(pnw_dv %>%
+                      dplyr::left_join(usgs_raw %>%
                                  dplyr::select(drainage_area,
                                         lat,
                                         long,
