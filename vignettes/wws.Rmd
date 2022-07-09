@@ -13,7 +13,13 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+## Intro  
 
+The reason for whitewater has always been to get USGS current water data with parallel processing. However, there's also always been the idea of tidying up the returned data. This vignette will go into the advantages and disadvantages of using some of the functionality in whitewater.  
+
+## ww_*()'s  
+
+All of the functions in whitewater begin with a prefix `ww`. This is to help the user search for functions quickly using [Rstudios code completion](https://support.rstudio.com/hc/en-us/articles/205273297-Code-Completion-in-the-RStudio-IDE) as well as simply remember! 
 ```{r setup}
 library(whitewater)
 ```

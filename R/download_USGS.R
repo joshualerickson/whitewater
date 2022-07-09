@@ -105,7 +105,10 @@ ww_dvUSGS <- function(sites,
                          month_day = str_c(month, day, sep = "-"),
                          wy = waterYear(Date, wy_month, TRUE),
                          month_abb = factor(month.abb[month], levels = month.abb),
-                         month_day = str_c(month, day, sep = "-"))
+                         month_day = str_c(month, day, sep = "-")) %>%
+                  dplyr::group_by(site_no, wy) %>%
+                  dplyr::add_count(name = 'obs_per_wy') %>%
+                  dplyr::ungroup()
 
   attr(usgs_raw_dv, 'wy_month') <- wy_month
   attr(usgs_raw_dv, 'parameter_cd') <- parameter_cd
@@ -261,7 +264,8 @@ if(missing(procDV)) {
   suppressWarnings(usgs_min_max_wy <- usgs_raw %>%
                       group_by(Station,wy,site_no) %>%
                       summarise(across(dplyr::any_of(cols),
-                                       list(
+                                         list(
+                                         sum = ~sum(.x, na.rm = TRUE),
                                          max = ~max(.x, na.rm = TRUE),
                                          min = ~min(.x, na.rm = TRUE),
                                          mean = ~mean(.x, na.rm = TRUE),
@@ -279,9 +283,22 @@ if(missing(procDV)) {
                                          sd_norm = ~sd(log(.x), na.rm = TRUE))))  %>%
                       slice_head(n=1) %>%
                       ungroup() %>%
-                      dt_to_tibble()
+                      dt_to_tibble() %>%
+                      dplyr::left_join(pnw_dv %>%
+                                 dplyr::select(drainage_area,
+                                        lat,
+                                        long,
+                                        altitude,
+                                        site_no,
+                                        obs_per_wy) %>%
+                                 dplyr::group_by(site_no) %>%
+                                 dplyr::slice(n = 1) %>%
+                                 dplyr::ungroup(), by = 'site_no') %>%
+                      dplyr::group_by(site_no) %>%
+                      dplyr::add_count(name = 'wy_count') %>%
+                      dplyr::relocate(Station, site_no, drainage_area,
+                                      lat, long, altitude, obs_per_wy, wy_count, dplyr::everything())
 )
-
 
   if(nrow(usgs_min_max_wy) < 1){
 
@@ -296,10 +313,11 @@ if(isTRUE(verbose)){
     if("Flow" %in% cols){
 
       wy_month <- attributes(usgs_raw)$wy_month
+
 if(isTRUE(verbose)){
       cli::cli_alert('now starting to gather peak flows using dataRetrieval::readNWISpeak')
 }
-      usgs_min_max_wy <- adding_peaks_to_df(usgs_min_max_wy, parallel = parallel, wy_month = wy_month, verbose)
+      usgs_min_max_wy <- adding_peaks_to_df(usgs_min_max_wy, parallel = parallel, wy_month = wy_month, verbose = verbose)
 
     }
 

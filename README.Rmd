@@ -25,6 +25,10 @@ knitr::opts_chunk$set(
 
 The goal of whitewater is to provide sequential and parallel processing for USGS stations in a tidy-style format. This package allows user to `plan()` their choice of parallel processing and then use the argument `parallel = TRUE` in whitewater function calls. The package also puts every output in a `tibble` with data munging of sites, parameter and stat codes, which results in a __tidy__ style data frame.  
 
+## Attention!  
+
+**Please, due to potentially crashing (USGS Water Services)[https://waterservices.usgs.gov/] REST services keep your parallel processing to 10 cores/workers or less. By following this limit, we can still benefit from parallel processing but also being mindful/respectful to the USGS Water Services via [{dataRetrieval}](https://github.com/USGS-R/dataRetrieval) and REST services. Thank you!**    
+
 ## Installation
 
 You can install the development version of whitewater from [GitHub](https://github.com/) with:
@@ -64,15 +68,18 @@ st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>%
 
 ```{r}
 #need to call future::plan()
-plan(multisession(workers = availableCores()-1))
+
+##### Remember, please use 10 or less workers #####
+plan(multisession(workers = 10))
 
 #running on 11 cores
 
 system.time({
-pnw_dv <- suppressMessages(ww_dvUSGS(huc17_sites$site_no,
+pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
                     parameter_cd = '00060',
                     wy_month = 10,
-                    parallel = TRUE))
+                    parallel = TRUE,
+                    verbose = FALSE)
 })
 
 nrow(pnw_dv)
@@ -86,9 +93,9 @@ Now we can use other `ww_` functions to filter the data by water year, month, wa
 
 Same as above, we can just call `parallel = TRUE` to run in parallel since we'll be getting peak flows from `dataRetrieval::readNWISpeak()`.  
 ```{r}
+
 system.time({
-pnw_wy <- suppressWarnings(suppressMessages(ww_wyUSGS(pnw_dv,
-                                     parallel = TRUE)))
+pnw_wy <- suppressMessages(ww_wyUSGS(pnw_dv, parallel = TRUE, verbose = F))
 })
 
 pnw_wy
@@ -117,9 +124,7 @@ p2 <- pnw_wy %>%
   filter(n > 10) %>% 
   nest() %>% 
   mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va))['p.value'])) %>% 
-  unnest() %>% slice(n=1) %>% left_join(pnw_dv %>% group_by(site_no) %>% 
-                                         dplyr::select(site_no, lat, long) %>% 
-                                         slice(n=1), by = 'site_no') %>% 
+  unnest() %>% slice(n=1) %>% 
   st_as_sf(coords = c('long', 'lat')) %>% 
   ggplot() + 
   geom_sf(aes(color = p.value), show.legend = F, size = .5)+
@@ -168,7 +173,7 @@ yaak_daily_report %>%
   ggplot() + 
   geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va'))) + 
   scale_color_manual(values = c('black', 'red', 'blue')) +
-  scale_alpha_manual(values = c(1,.25), guide = 'none') +
+  scale_alpha_manual(values = c(1,.5), guide = 'none') +
   labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to 25th and 75th percentiles') + 
   theme_bw()
 ```

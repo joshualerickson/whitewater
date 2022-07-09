@@ -56,3 +56,9 @@ dt_to_tibble <- function(data) {
 all_na <- function(x){
   any(!is.na(x))
 }
+
+
+
+
+
+

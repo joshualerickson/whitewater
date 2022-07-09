@@ -17,6 +17,16 @@ for USGS stations in a tidy-style format. This package allows user to
 every output in a `tibble` with data munging of sites, parameter and
 stat codes, which results in a **tidy** style data frame.
 
+## Attention!
+
+**Please, due to potentially crashing (USGS Water
+Services)\[<https://waterservices.usgs.gov/>\] REST services keep your
+parallel processing to 10 cores/workers or less. By following this
+limit, we can still benefit from parallel processing but also being
+mindful/respectful to the USGS Water Services via
+[{dataRetrieval}](https://github.com/USGS-R/dataRetrieval) and REST
+services. Thank you!**
+
 ## Installation
 
 You can install the development version of whitewater from
@@ -51,7 +61,7 @@ huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
                                            parameterCd = '00060',
                                            drainAreaMax = 2000)
 cat("# of sites: ", nrow(huc17_sites))
-#> # of sites:  677
+#> # of sites:  676
 
 st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>% 
   ggplot() + 
@@ -64,24 +74,27 @@ st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>%
 
 ``` r
 #need to call future::plan()
-plan(multisession(workers = availableCores()-1))
+
+##### Remember, please use 10 or less workers #####
+plan(multisession(workers = 10))
 
 #running on 11 cores
 
 system.time({
-pnw_dv <- suppressMessages(ww_dvUSGS(huc17_sites$site_no,
+pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
                     parameter_cd = '00060',
                     wy_month = 10,
-                    parallel = TRUE))
+                    parallel = TRUE,
+                    verbose = FALSE)
 })
 #>    user  system elapsed 
-#>   25.69    1.98  201.12
+#>   39.62    3.00  475.62
 
 nrow(pnw_dv)
-#> [1] 11681517
+#> [1] 11714373
 
 pnw_dv
-#> # A tibble: 11,681,517 x 24
+#> # A tibble: 11,714,373 x 25
 #>    agency_cd site_no  Date        Flow Flow_cd drainage_area Station   lat  long
 #>    <chr>     <chr>    <date>     <dbl> <chr>           <dbl> <chr>   <dbl> <dbl>
 #>  1 USGS      10396000 1911-04-01   160 A                 200 DONNER~  42.8 -119.
@@ -94,13 +107,13 @@ pnw_dv
 #>  8 USGS      10396000 1911-04-08   182 A                 200 DONNER~  42.8 -119.
 #>  9 USGS      10396000 1911-04-09   157 A                 200 DONNER~  42.8 -119.
 #> 10 USGS      10396000 1911-04-10   132 A                 200 DONNER~  42.8 -119.
-#> # ... with 11,681,507 more rows, and 15 more variables: altitude <dbl>,
+#> # ... with 11,714,363 more rows, and 16 more variables: altitude <dbl>,
 #> #   STILLING.WELL_Flow <dbl>, STILLING.WELL_Flow_cd <chr>,
 #> #   .Estimated.By.Regression._Flow <dbl>,
 #> #   .Estimated.By.Regression._Flow_cd <chr>, ..2.._Flow <dbl>,
 #> #   ..2.._Flow_cd <chr>, .Discharge.1921.to.1952._Flow <dbl>,
 #> #   .Discharge.1921.to.1952._Flow_cd <chr>, year <dbl>, month <dbl>, day <int>,
-#> #   month_day <chr>, wy <int>, month_abb <fct>
+#> #   month_day <chr>, wy <int>, month_abb <fct>, obs_per_wy <int>
 ```
 
 Now we can use other `ww_` functions to filter the data by water year,
@@ -114,31 +127,56 @@ since we’ll be getting peak flows from `dataRetrieval::readNWISpeak()`.
 
 ``` r
 system.time({
-pnw_wy <- suppressWarnings(suppressMessages(ww_wyUSGS(pnw_dv,
-                                     parallel = TRUE)))
+pnw_wy <- suppressMessages(ww_wyUSGS(pnw_dv, parallel = TRUE, verbose = F))
 })
+#> Warning: One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
+#> One or more parsing issues, see `problems()` for details
 #>    user  system elapsed 
-#>   12.41    0.27   64.43
+#>   16.52    0.77   89.80
 
 pnw_wy
-#> # A tibble: 32,650 x 20
-#>    Station          site_no    wy peak_va peak_dt    Flow_max Flow_min Flow_mean
-#>    <chr>            <chr>   <int>   <dbl> <date>        <dbl>    <dbl>     <dbl>
-#>  1 ABIQUA CREEK AT~ 142007~  2014      NA NA            53.2     53.2       25.6
-#>  2 ABIQUA CREEK AT~ 142007~  2015    3330 2014-12-21    17.8     17.8      199. 
-#>  3 ABIQUA CREEK AT~ 142007~  2016    5980 2015-12-07     6.09     6.09     318. 
-#>  4 ABIQUA CREEK AT~ 142007~  2017    3740 2017-03-09    11.9     11.9      405. 
-#>  5 ABIQUA CREEK AT~ 142007~  2018    4290 2017-10-22    24.1     24.1      257. 
-#>  6 ABIQUA CREEK AT~ 142007~  2019    3700 2019-04-07     8.78     8.78     201. 
-#>  7 ABIQUA CREEK AT~ 142007~  2020    2600 2020-01-28    28.4     28.4      197. 
-#>  8 ABIQUA CREEK AT~ 142007~  2021    5360 2020-12-20    13.1     13.1      254. 
-#>  9 ABIQUA CREEK AT~ 142007~  2022      NA NA            59.7     59.7      462. 
-#> 10 AHTANUM CREEK A~ 125025~  1904      NA NA           450      450        165. 
-#> # ... with 32,640 more rows, and 12 more variables: Flow_median <dbl>,
-#> #   Flow_stdev <dbl>, Flow_coef_var <dbl>, Flow_max_dnorm <dbl>,
-#> #   Flow_min_dnorm <dbl>, Flow_mean_dnorm <dbl>, Flow_med_dnorm <dbl>,
-#> #   Flow_max_sdnorm <dbl>, Flow_min_sdnorm <dbl>, Flow_mean_sdnorm <dbl>,
-#> #   Flow_med_sdnorm <dbl>, Flow_sd_norm <dbl>
+#> # A tibble: 32,670 x 27
+#>    Station   site_no    wy peak_va peak_dt    drainage_area   lat  long altitude
+#>    <chr>     <chr>   <int>   <dbl> <date>             <dbl> <dbl> <dbl>    <dbl>
+#>  1 ABIQUA C~ 142007~  2014      NA NA                  72.9  45.0 -123.      193
+#>  2 ABIQUA C~ 142007~  2015    3330 2014-12-21          72.9  45.0 -123.      193
+#>  3 ABIQUA C~ 142007~  2016    5980 2015-12-07          72.9  45.0 -123.      193
+#>  4 ABIQUA C~ 142007~  2017    3740 2017-03-09          72.9  45.0 -123.      193
+#>  5 ABIQUA C~ 142007~  2018    4290 2017-10-22          72.9  45.0 -123.      193
+#>  6 ABIQUA C~ 142007~  2019    3700 2019-04-07          72.9  45.0 -123.      193
+#>  7 ABIQUA C~ 142007~  2020    2600 2020-01-28          72.9  45.0 -123.      193
+#>  8 ABIQUA C~ 142007~  2021    5360 2020-12-20          72.9  45.0 -123.      193
+#>  9 ABIQUA C~ 142007~  2022      NA NA                  72.9  45.0 -123.      193
+#> 10 AHTANUM ~ 125025~  1904      NA NA                 173    46.5 -120.      940
+#> # ... with 32,660 more rows, and 18 more variables: obs_per_wy <int>,
+#> #   wy_count <int>, Flow_sum <dbl>, Flow_max <dbl>, Flow_min <dbl>,
+#> #   Flow_mean <dbl>, Flow_median <dbl>, Flow_stdev <dbl>, Flow_coef_var <dbl>,
+#> #   Flow_max_dnorm <dbl>, Flow_min_dnorm <dbl>, Flow_mean_dnorm <dbl>,
+#> #   Flow_med_dnorm <dbl>, Flow_max_sdnorm <dbl>, Flow_min_sdnorm <dbl>,
+#> #   Flow_mean_sdnorm <dbl>, Flow_med_sdnorm <dbl>, Flow_sd_norm <dbl>
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="75%" style="display: block; margin: auto;" />
@@ -187,21 +225,12 @@ yaak_daily_report <- ww_statsUSGS(yaak_river_dv,
                                   temporalFilter = 'daily',
                                   days = 365)
 #> v Yaak River near Troy MT 'NWIS Stat' for Temporal Filter (daily) was successfully downloaded.
-#> Warning: 105 parsing failures.
-#>   row col expected actual
-#> 22414  -- a number    Ice
-#> 22415  -- a number    Ice
-#> 22416  -- a number    Ice
-#> 22417  -- a number    Ice
-#> 22418  -- a number    Ice
-#> ..... ... ........ ......
-#> See problems(...) for more details.
 yaak_daily_report %>% 
   pivot_longer(c('Flow', 'p25_va', 'p75_va')) %>% 
   ggplot() + 
   geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va'))) + 
   scale_color_manual(values = c('black', 'red', 'blue')) +
-  scale_alpha_manual(values = c(1,.25), guide = 'none') +
+  scale_alpha_manual(values = c(1,.5), guide = 'none') +
   labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to 25th and 75th percentiles') + 
   theme_bw()
 ```

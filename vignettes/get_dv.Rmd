@@ -14,6 +14,13 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Intro  
+
+The whitewater package has a flow to it and that flow starts with `ww_dvUSGS()`. In this vignette we'll go over the advantages of using `ww_dvUSGS()` first but also how it's not necessary.  
+
+## Flow  
+
+The main flow in whitewater is to start with `ww_dvUSGS()` and then use that object for further filtering. We'll start with just getting daily values of water data.  
 ```{r setup}
 library(whitewater)
 ```
