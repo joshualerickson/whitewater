@@ -96,19 +96,34 @@ ww_dvUSGS <- function(sites,
 
   if(is.null(usgs_raw_dv)){usethis::ui_stop("site query ran into an error: please check parameters or stat code...")}
 
+  leap_years <- c(1832, 1836, 1840, 1844, 1848, 1852,
+                  1856, 1860, 1864, 1868, 1872, 1876,
+                  1880, 1884, 1888, 1892, 1896, 1904,
+                  1908, 1912, 1916, 1920, 1924, 1928,
+                  1932, 1936, 1940, 1944, 1948, 1952,
+                  1956, 1960, 1964, 1968, 1972, 1976,
+                  1980, 1984, 1988, 1992, 1996, 2000,
+                  2004, 2008, 2012, 2016, 2020, 2024,
+                  2028, 2032, 2036, 2040, 2044, 2048)
+
   usgs_raw_dv <- usgs_raw_dv %>%
                   dt_to_tibble() %>%
                   mutate(Date = lubridate::as_date(Date),
                          year = year(Date),
                          month = month(Date),
                          day = day(Date),
+                         doy=lubridate::yday(Date),
+                         wy_doy = ifelse(!(year %in% leap_years),ifelse(doy >= month_to_doy(wy_month, leap = F),
+                                         doy-month_to_doy(wy_month, leap = F)+1,
+                                         (365-month_to_doy(wy_month, leap = F)+1+doy)),
+                                         ifelse(doy >= month_to_doy(wy_month, leap = T),
+                                         doy-month_to_doy(wy_month, leap = T)+1,
+                                         (366-month_to_doy(wy_month, leap = T)+1+doy))),
                          month_day = str_c(month, day, sep = "-"),
                          wy = waterYear(Date, wy_month, TRUE),
                          month_abb = factor(month.abb[month], levels = month.abb),
                          month_day = str_c(month, day, sep = "-")) %>%
-                  dplyr::group_by(site_no, wy) %>%
-                  dplyr::add_count(name = 'obs_per_wy') %>%
-                  dplyr::ungroup()
+                  add_date_counts()
 
   attr(usgs_raw_dv, 'wy_month') <- wy_month
   attr(usgs_raw_dv, 'parameter_cd') <- parameter_cd
@@ -285,17 +300,20 @@ if(missing(procDV)) {
                       ungroup() %>%
                       dt_to_tibble() %>%
                       dplyr::left_join(usgs_raw %>%
-                                 dplyr::select(drainage_area,
+                                 dplyr::select(
+                                        wy,
+                                        drainage_area,
                                         lat,
                                         long,
                                         altitude,
                                         site_no,
                                         obs_per_wy) %>%
-                                 dplyr::group_by(site_no) %>%
+                                 dplyr::group_by(site_no,wy) %>%
                                  dplyr::slice(n = 1) %>%
-                                 dplyr::ungroup(), by = 'site_no') %>%
+                                 dplyr::ungroup(), by = c('site_no', 'wy')) %>%
                       dplyr::group_by(site_no) %>%
                       dplyr::add_count(name = 'wy_count') %>%
+                      dplyr::ungroup() %>%
                       dplyr::relocate(Station, site_no, drainage_area,
                                       lat, long, altitude, obs_per_wy, wy_count, dplyr::everything())
 )
@@ -376,9 +394,10 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, verbose = TRUE, .
       cols <- cols_to_update(usgs_raw)
 
       suppressWarnings(final_data <- usgs_raw %>%
-                    group_by(Station, wy, month_abb, month) %>%
+                    group_by(Station, site_no, wy, month_abb, month) %>%
                     summarise(across(dplyr::any_of(cols),
                                      list(
+                                       sum = ~sum(.x, na.rm = TRUE),
                                        max = ~max(.x, na.rm = TRUE),
                                        min = ~min(.x, na.rm = TRUE),
                                        mean = ~mean(.x, na.rm = TRUE),
@@ -387,9 +406,42 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, verbose = TRUE, .
                                        coef_var = ~sd(.x, na.rm = TRUE)/mean(.x, na.rm = TRUE)))) %>%
                     slice_head(n=1) %>%
                     ungroup() %>%
-                    mutate(year_month =  str_c(wy, month,"1", sep = "-"),
-                           year_month =  parse_date_time(year_month, orders = c("%y-%m-%d", "%y%m%d", "%y-%m-%d %H:%M")),
-                           year_month =  ymd(as.character(year_month)))
+                    mutate(wy_month_day =  str_c(wy, month,"1", sep = "-"),
+                           wy_month_day =  parse_date_time(wy_month_day, orders = c("%y-%m-%d", "%y%m%d", "%y-%m-%d %H:%M")),
+                           wy_month_day =  ymd(as.character(wy_month_day)),
+                           doy = dplyr::case_when(month == 1 ~ 1,
+                                                  month == 2 ~ 32,
+                                                  month == 3 ~ 60,
+                                                  month == 4 ~ 91,
+                                                  month == 5 ~ 122,
+                                                  month == 6 ~ 152,
+                                                  month == 7 ~ 182,
+                                                  month == 8 ~ 213,
+                                                  month == 9 ~ 244,
+                                                  month == 10 ~ 274,
+                                                  month == 11 ~ 305,
+                                                  month == 12 ~ 335,
+                                                  TRUE ~ NA_real_)) %>%
+                      dplyr::left_join(usgs_raw %>%
+                                         dplyr::select(
+                                                       wy,
+                                                       month,
+                                                       drainage_area,
+                                                       lat,
+                                                       long,
+                                                       altitude,
+                                                       site_no,
+                                                       obs_per_wy,
+                                                       obs_per_month) %>%
+                                         dplyr::group_by(site_no, wy, month) %>%
+                                         dplyr::slice(n = 1) %>%
+                                         dplyr::ungroup(), by = c('site_no', 'wy', 'month')) %>%
+                      dplyr::group_by(site_no, wy) %>%
+                      dplyr::add_count(name = 'wym_count') %>%
+                      dplyr::ungroup() %>%
+                      dplyr::relocate(Station, site_no, wy, wy_month_day, doy, drainage_area,
+                                      lat, long, altitude, obs_per_wy,
+                                      obs_per_month, wym_count, dplyr::everything())
       )
 
 
@@ -456,16 +508,28 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, verbose = TRUE,
   cols <- cols_to_update(usgs_raw)
 
  suppressWarnings( final_data <- usgs_raw  %>%
-                group_by(Station, month_abb) %>%
+                group_by(Station,site_no, month_abb) %>%
                 summarise(across(dplyr::any_of(cols),
                                  list(
+                                   sum = ~sum(.x, na.rm = TRUE),
                                    max = ~max(.x, na.rm = TRUE),
                                    min = ~min(.x, na.rm = TRUE),
                                    mean = ~mean(.x, na.rm = TRUE),
                                    median = ~median(.x, na.rm = TRUE),
                                    stdev = ~sd(.x, na.rm = TRUE),
                                    coef_var = ~sd(.x, na.rm = TRUE)/mean(.x, na.rm = TRUE)))) %>%
-                          ungroup())
+                          ungroup())%>%
+               dplyr::left_join(usgs_raw %>%
+                                  dplyr::select(
+                                    drainage_area,
+                                    lat,
+                                    long,
+                                    altitude,
+                                    site_no,
+                                    month_abb) %>%
+                                  dplyr::group_by(site_no, month_abb) %>%
+                                  dplyr::slice(n = 1) %>%
+                                  dplyr::ungroup(), by = c('site_no', 'month_abb'))
 
 
   if(nrow(final_data) < 1){
