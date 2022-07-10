@@ -10,10 +10,8 @@ navbar:
     - text: "Vignettes"
       icon: fas fa-book
       menu:
-      -  text: Get Daily Values
+      -  text: Get Started
          href: articles/get_dv.html
-      -  text: Filtering Daily Values
-         href: articles/wws.html
       -  text: Parallel
          href: articles/parallel.html
       -  text: Stats

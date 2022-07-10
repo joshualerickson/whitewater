@@ -393,6 +393,8 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, verbose = TRUE, .
 
       cols <- cols_to_update(usgs_raw)
 
+      wy_month <- attributes(usgs_raw)$wy_month
+
       suppressWarnings(final_data <- usgs_raw %>%
                     group_by(Station, site_no, wy, month_abb, month) %>%
                     summarise(across(dplyr::any_of(cols),
@@ -421,7 +423,10 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, verbose = TRUE, .
                                                   month == 10 ~ 274,
                                                   month == 11 ~ 305,
                                                   month == 12 ~ 335,
-                                                  TRUE ~ NA_real_)) %>%
+                                                  TRUE ~ NA_real_),
+                           ifelse(doy >= month_to_doy(wy_month, leap = F),
+                                  doy-month_to_doy(wy_month, leap = F)+1,
+                                  (365-month_to_doy(wy_month, leap = F)+1+doy))) %>%
                       dplyr::left_join(usgs_raw %>%
                                          dplyr::select(
                                                        wy,
