@@ -153,7 +153,7 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
                           startDate = start_date,
                           endDate = end_date,
                           statCd = stat_cd) %>%
-                          dataRetrieval::renameNWISColumns()
+                          dataRetrieval::renameNWISColumns(p70290 = "Chloride")
 
   # could use attr(gage_data, 'siteInfo') but not a big deal IMO
 
@@ -1621,7 +1621,7 @@ usgs_min_max_wy <-  data %>%
 cols_to_update <- function(data){
 
   param_names <- c("Wtemp","Precip","Flow","GH","SpecCond",
-                   "DO", "pH", "GWL","Turb","WLBLS")
+                   "DO", "pH", "GWL","Turb","WLBLS", "Chloride")
 
   names(data[which(names(data) %in% param_names)])
 }
@@ -1646,6 +1646,7 @@ name_params_to_update <- function(x){
                    x == "62611" ~ "GWL",
                    x == "63680" ~ "Turb",
                    x == "72019" ~ "WLBLS",
+                   x == "70290" ~ "Chloride",
                    x == "param_00010" ~ "Wtemp",
                    x == "param_00045" ~ "Precip",
                    x == "param_00060" ~ "Flow",
@@ -1656,6 +1657,7 @@ name_params_to_update <- function(x){
                    x == "param_62611" ~ "GWL",
                    x == "param_63680" ~ "Turb",
                    x == "param_72019" ~ "WLBLS",
+                   x == "param_70290" ~ "Chloride",
                    x == "Wtemp_param_00010" ~ "Wtemp",
                    x == "Precip_param_00045" ~ "Precip",
                    x == "Flow_param_00060" ~ "Flow",
@@ -1665,7 +1667,8 @@ name_params_to_update <- function(x){
                    x == "pH_param_00400" ~ "pH",
                    x == "GWL_param_62611" ~ "GWL",
                    x == "Turb_param_63680" ~ "Turb",
-                   x == "WLBLS_param_72019" ~ "WLBLS")
+                   x == "WLBLS_param_72019" ~ "WLBLS",
+                   x == "Chloride_param_70290" ~ "Chloride")
 
 }
 
