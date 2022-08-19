@@ -16,8 +16,7 @@ knitr::opts_chunk$set(
   dev.args = list(png = list(type = "cairo")), fig.align='center', fig.height=6, fig.width=8
 )
 library(dplyr)
-dam_ts <- readr::read_csv('C:/Users/joshu/OneDrive/Documents/R/test/playing/dam_ts.csv') 
-pnw_wy <- readr::read_csv('C:/Users/joshu/OneDrive/Documents/R/test/playing/pnw_wy.csv')
+pnw_wy <- readr::read_csv('vignettes/pnw_wy.csv')
 ```
 
 ## Intro  
@@ -95,7 +94,7 @@ Now let's filter the sites with greater than or equal to 30 years of data and al
 
 First, we'll filter the sites that have less than 30 years of data and create a decade column so we can join the dam index data.  
 
-```{r}
+```{r, eval = F}
 
 pnw_wy <- pnw_wy %>% filter(wy_count >= 30)
 
@@ -120,7 +119,7 @@ for(i in c(seq(1800, 2010, 10), 2018)){
 }
 
 ```
-```{r, echo=T, warning = F, message=F, error=F}
+```{r, eval = F, echo=T, warning = F, message=F, error=F}
 
 #get comids for nwis sites
 comids <- function(point) {

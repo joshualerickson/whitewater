@@ -45,4 +45,8 @@ jobs:
 
       - uses: r-lib/actions/check-r-package@v1
 
+      - name: Check
+        run: rcmdcheck::rcmdcheck(args = c("--no-manual", "--ignore-vignettes", "--no-build-vignettes"), build_args = c("--no-manual", "--ignore-vignettes", "--no-build-vignettes"), error_on = "error")
+        shell: Rscript {0}
+
 
