@@ -160,6 +160,7 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
   gage_info <- tibble(
     site_no = site_no,
     drainage_area = readNWISsite(site_no) %>% select(drain_area_va) %>% as.numeric(),
+    drainage_area = drainage_area*0.621371,
     Station = readNWISsite(site_no) %>% select(station_nm) %>% as.character(),
     lat = readNWISsite(site_no) %>% select(dec_lat_va) %>% as.numeric(),
     long = readNWISsite(site_no) %>% select(dec_long_va) %>% as.numeric(),
@@ -335,11 +336,52 @@ if(isTRUE(verbose)){
 if(isTRUE(verbose)){
       cli::cli_alert('now starting to gather peak flows using dataRetrieval::readNWISpeak')
 }
-      usgs_min_max_wy <- adding_peaks_to_df(usgs_min_max_wy, parallel = parallel, wy_month = wy_month, verbose = verbose)
+      usgs_min_max_wy <- ww_peakUSGSdv(usgs_min_max_wy, parallel = parallel, wy_month = wy_month, verbose = verbose)
 
     }
 
   usgs_min_max_wy
+}
+
+#' Get Peak Flows
+#'
+#' @param sites A vector of USGS NWIS sites
+#' @param parallel \code{logical} indicating whether to use future_map().
+#' @param wy_month \code{numeric} indicating the start month of the water year. e.g. 10 (default).
+#' @param verbose \code{logical} for printing information. TRUE (default).
+#' @param ... arguments to pass on to \link[furrr]{future_map}.
+#'
+#' @return a \code{tibble} with peaks by water year
+#' @export
+
+ww_peakUSGS <- function(sites, parallel,wy_month = 10,verbose = TRUE, ...) {
+
+  peak_sites <- data.frame(peaks = sites)
+
+
+  if(isTRUE(parallel)){
+
+    peaks <- peak_sites %>%
+      split(.$peaks) %>%
+      furrr::future_map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month, verbose = verbose, dv = F)), ...) %>%
+      purrr::keep(~length(.) != 0) %>%
+      purrr::map(~.x[['result']]) %>%
+      plyr::rbind.fill()
+
+  } else {
+
+    peaks <- peak_sites %>%
+      split(.$peaks) %>%
+      purrr::map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month, verbose = verbose, dv = F))) %>%
+      purrr::keep(~length(.) != 0) %>%
+      purrr::map(~.x[['result']]) %>%
+      plyr::rbind.fill()
+
+  }
+
+  usgs_min_max_wy <-  peaks %>%
+    dt_to_tibble() %>%
+    dplyr::select(Station, site_no, wy, peak_va, peak_dt, dplyr::everything())
 }
 
 #' Water Year & Monthly Stats (USGS)
@@ -1523,13 +1565,27 @@ site_station_days <- tibble(sites = sites,
 #' @param site_no A \code{character} USGS NWIS site.
 #' @param wy_month a water year to filter by
 #' @param verbose \code{logical} for printing information. TRUE (default).
+#' @param dv internal logical
 #'
 #' @return a data.frame with instantaneous peaks from USGS
 #' @noRd
-peaks_USGS <- function(site_no, wy_month, verbose){
+peaks_USGS <- function(site_no, wy_month, verbose, dv = TRUE){
 
  final_data <- dataRetrieval::readNWISpeak(site_no)%>% select(peak_va, peak_dt, site_no) %>%
                mutate(wy = waterYear(peak_dt, wy_month, TRUE))
+
+ if(!isTRUE(dv)){
+   gage_info <- tibble(
+     site_no = site_no,
+     drainage_area = readNWISsite(site_no) %>% select(drain_area_va) %>% as.numeric(),
+     Station = readNWISsite(site_no) %>% select(station_nm) %>% as.character(),
+     lat = readNWISsite(site_no) %>% select(dec_lat_va) %>% as.numeric(),
+     long = readNWISsite(site_no) %>% select(dec_long_va) %>% as.numeric(),
+     altitude = readNWISsite(site_no) %>% select(alt_va) %>% as.numeric()
+   )
+
+   final_data <- dplyr::left_join(final_data, gage_info, by = c('site_no'))
+ }
 if(isTRUE(verbose)){
   if(nrow(final_data) < 1){
 
@@ -1576,10 +1632,10 @@ pad_zero_for_logging <- function(data){
 #' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param ... other stuff to pass to future_map
 #'
-#' @return a df with peaks by water year
+#' @return a \code{tibble} with peaks by water year
 #' @noRd
 
-adding_peaks_to_df <- function(data, parallel,wy_month,verbose, ...) {
+ww_peakUSGSdv <- function(data, parallel,wy_month,verbose, ...) {
 
 peak_sites <- data.frame(peaks = unique(data$site_no))
 

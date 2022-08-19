@@ -3,32 +3,43 @@ title: "parallel"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{parallel}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  dev.args = list(png = list(type = "cairo")), fig.align='center', fig.height=6, fig.width=8
 )
+library(dplyr)
+dam_ts <- readr::read_csv('C:/Users/joshu/OneDrive/Documents/R/test/playing/dam_ts.csv') 
+pnw_wy <- readr::read_csv('C:/Users/joshu/OneDrive/Documents/R/test/playing/pnw_wy.csv')
 ```
 
 ## Intro  
 
-Running repetitive tasks in parallel can save a lot of time as well as provide more time to do other things like .
-```{r setup}
-library(whitewater)
-```
+Running repetitive tasks in parallel can save a lot of time (of course) but it can also provide more time to do other things like exploratory data analysis (EDA). This lets the user _explore_ hypotheses and visualizations relatively quickly and as a result see if a more thorough analysis is needed or pick up on some underlying patterns and structures. whitewater provides some wrapper functions around `dataRetrieval::readNWISdata()` so that the user can then `future::plan()` their method of parallelization. This vignette will go over a basic example of how one might use whitewater to get an idea of gauging stations that might be showing a trend (positive or negative) over time.  
 
 ### Running in parallel  
 
+First we'll need to load a few packages and then we can get started. We'll use the function `dataRetrieval::whatNWISdata()` to get active gauging stations with drainage areas less than 2,000 sq.km's. From there, we can then use the station site id's to get the actual daily flow values over time.  
+
 ```{r, warning=F, message=F}
 library(whitewater)
-library(tidyverse)
 library(sf)
 library(future)
+library(furrr)
 library(dataRetrieval)
+library(patchwork)
+library(broom)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(ggplot2)
 
 huc17_sites <- dataRetrieval::whatNWISdata(huc = 17,
                                            siteStatus = 'active',
@@ -40,26 +51,26 @@ cat("# of sites: ", nrow(huc17_sites))
 st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>% 
   ggplot() + 
   geom_sf() +
-  borders('state', xlim = c(-130, -110), ylim = c(20, 50)) + 
+  borders('state', xlim = c(-130, -110), ylim = c(40, 50)) + 
+  coord_sf( xlim = c(-125, -110), ylim = c(40, 50)) + 
   theme_bw()
 ```
 
+Now that we have the sites we'll get the daily values in parallel. We'll keep the workers to be 10 or less so we don't overload the server! Remember, we need to call `future::plan()` and then `parallel = TRUE` so that `ww_dvUSGS()` will run in parallel. Behind the scenes whitewater uses {furrr} to run the operation in parallel. This is essentially chunk-based parallelism; where we are chunking by site id and then mapping `dataRetrieval::readNWISdata()` with some other added stuff.  
 
-```{r}
+```{r, eval = F}
 #need to call future::plan()
 
 ##### Remember, please use 10 or less workers #####
 plan(multisession(workers = 10))
 
-#running on 11 cores
+#running on 10 cores
 
-system.time({
 pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
                     parameter_cd = '00060',
                     wy_month = 10,
                     parallel = TRUE,
                     verbose = FALSE)
-})
 
 nrow(pnw_dv)
 
@@ -70,25 +81,110 @@ Now we can use other `ww_` functions to filter the data by water year, month, wa
 
 ### Water Year  
 
-Same as above, we can just call `parallel = TRUE` to run in parallel since we'll be getting peak flows from `dataRetrieval::readNWISpeak()`.  
-```{r}
+Same as above, we can just call `parallel = TRUE` to run in parallel since we'll be getting peak flows from `dataRetrieval::readNWISpeak()`. If you don't need/want the daily flows summarised, you can just call `ww_peakUSGS()` and that will only call the `dataRetrieval::readNWISpeak()` function. For our case, we'll use the `ww_wyUSGS()` because we'll want to look into some other stats (minimum) as well as filter by total water years.  
+
+```{r, eval = F,  echo=T, warning = F, message=F, error=F}
 
 pnw_dv_filt <- pnw_dv %>% filter(obs_per_wy > 360)
 
-system.time({
 pnw_wy <- suppressMessages(ww_wyUSGS(pnw_dv_filt, parallel = TRUE, verbose = F))
-})
 
-pnw_wy
 ```
 
+Now let's filter the sites with greater than or equal to 30 years of data and also account for dams above them. Dams become a real problem when performing runoff statistics like peak flow since they are _regulated_, i.e. flows can be altered. Thus we need to account for this discrepancy by either taking out any sites that have dams above them (# of dams > 0) or somehow account for the relative impact (dimensionless value) these dams contribute above point of interest (comid). We'll use the latter because of the robustness when compared with the other method, i.e. size matters more than counts.  
+
+First, we'll filter the sites that have less than 30 years of data and create a decade column so we can join the dam index data.  
+
+```{r}
+
+pnw_wy <- pnw_wy %>% filter(wy_count >= 30)
+
+#we'll need this later
+
+pnw_wy <- pnw_wy %>% mutate(decade = 10+(10*(lubridate::year(peak_dt) %/% 10)),
+                            decade = ifelse(decade == 2020, 2018, decade))
+```
+
+Second, we'll dive into the dam situation. You'll need to download a zip file from [here](https://www.sciencebase.gov/catalog/item/5fb7e483d34eb413d5e14873). The name of the zip file we need is `DamIndex_PMC.zip`. This will download a bunch of csv's that we'll bind together so that we can take out any decades with greater than 0.01 DI. This will allow for watersheds that have dams but are almost negligible when it comes to a peak flow analysis.    
+
+```{r,eval = F, echo=T, warning = F, message=F, error=F}
+
+dam_ts <- tibble()
+
+for(i in c(seq(1800, 2010, 10), 2018)){
+  
+  damindex <- read_csv(paste0('DamIndex',i,'.csv'))
+  damindex$year <- i
+  dam_ts <- bind_rows(dam_ts, damindex)
+  
+}
+
+```
+```{r, echo=T, warning = F, message=F, error=F}
+
+#get comids for nwis sites
+comids <- function(point) {
+  clat <- point$geometry[[1]][[2]]
+  clng <- point$geometry[[1]][[1]]
+
+  ids <- paste0("https://labs.waterdata.usgs.gov/api/nldi/linked-data/comid/position?coords=POINT%28",
+                clng,"%20", clat, "%29")
+
+  error_ids <- httr::GET(url = ids,
+                         httr::write_disk(path = file.path(tempdir(),
+                                                           "nld_tmp.json"),overwrite = TRUE))
+
+  nld <- jsonlite::fromJSON(file.path(tempdir(),"nld_tmp.json"))
+}
+
+comids_nwis <- pnw_wy %>% 
+               sf::st_as_sf(coords = c('long', 'lat'), crs = 4326) %>% 
+               split(.$site_no) %>% 
+               furrr::future_map(~comids(.)$features$properties$identifier)
+
+comids_nwis <- tibble(COMID = as.numeric(comids_nwis), 
+                      site_no = as.numeric(names(comids_nwis)))
+ 
+# now join comids with pnw_wy and then join with dam_ts
+pnw_wy <- pnw_wy %>% 
+          mutate(site_no = as.numeric(site_no)) %>% 
+          left_join(comids_nwis, by = 'site_no') %>% 
+          left_join(dam_ts, by = c('decade' = 'year', 'COMID')) %>% 
+          filter(DamIndex < 0.05)
+
+```
+One final step! Since we are taking out years with a dam index >= 0.05, we'll need to make sure that we have current years available (2018, 2019, 2020, etc). What's nice about using Mann-Kendall trend analysis is that it's not too sensitive to missing years; however, years spanning several years or large gaps in the data will not truly represent the test you are looking for. Therefore, we'll need to take out large gaps as well.  
+
+```{r, echo=T, warning = F, message=F, error=F}
+pnw_wy_current <-   pnw_wy %>% 
+                    group_by(site_no) %>% 
+                    summarise(n = n(),
+                              max_wy = max(wy)) %>% 
+                    filter(max_wy >=2018) %>% 
+                    pull(site_no)
+
+
+pnw_wy <- pnw_wy %>% filter(site_no %in% pnw_wy_current)
+
+pnw_wy <- pnw_wy %>% 
+          group_by(site_no) %>% 
+          mutate(diff = wy - lag(wy),
+                 diff = if_else(is.na(diff), as.numeric(1), diff),
+                 logical = diff > 3,
+                 last_logical = last(which(logical)),
+                 last_logical = if_else(is.na(last_logical), first(which(!logical)), last_logical),
+                 last_row = dplyr::last(which(!logical))) %>% 
+          slice(last_logical:last_row) %>% 
+                  add_count() %>% 
+                  filter( n > 30)  %>% 
+          ungroup
+  
+cat("# of sites after filtering: ", length(unique(pnw_wy$site_no)))
+```
 
 ```{r, echo=F, warning = F, message=F, error=F}
  p1 <-  pnw_wy %>% 
   group_by(site_no) %>% 
-  filter(!is.na(peak_va)) %>% 
-  add_count() %>% 
-  filter( n > 10) %>% 
   nest() %>% 
   mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va))['p.value'])) %>% 
   unnest() %>% slice(n=1) %>% 
@@ -101,9 +197,6 @@ pnw_wy
   
 p2 <- pnw_wy %>% 
   group_by(site_no) %>% 
-  filter(!is.na(peak_va)) %>% 
-  add_count() %>% 
-  filter(n > 10) %>% 
   nest() %>% 
   mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va))['p.value'])) %>% 
   unnest() %>% slice(n=1) %>% 
@@ -112,85 +205,156 @@ p2 <- pnw_wy %>%
   geom_sf(aes(color = p.value), show.legend = F, size = .5)+
   scale_color_gradientn(colors = rev(hcl.colors('Zissou1', n = 32))) +
   borders('state', xlim = c(-130, -110), ylim = c(20, 50)) + 
+  coord_sf( xlim = c(-125, -110), ylim = c(40, 50)) + 
   theme_bw() 
 
-library(patchwork)
 (p2|p1 + theme(legend.position = 'bottom', legend.margin = margin(l = -10, unit='cm'))) +
-  plot_annotation(title = 'Mann-Kendall trend analysis (Peak Flow) with active USGS sites in Region 17', subtitle =  '10 years or more of data and drainage area < 2,000 km2')
+  plot_annotation(title = 'Mann-Kendall trend analysis (Peak Flow) with active USGS sites in Region 17', subtitle =  '30 years or more of data, current, dam index < 0.05 and drainage area < 2,000 km2')
+```
+In the graph above we can see that the data is skewed left with a decent amount of values (`r pnw_wy %>% 
+  group_by(site_no) %>% 
+  nest() %>% 
+  mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va))['p.value'])) %>% 
+  unnest() %>% slice(n=1) %>% filter(p.value <= 0.05) %>% nrow()`) equal to or below 0.05! But are they increasing or decreasing? For that we can use the `statistic` from the Mann-Kendall function to see if the trend is increasing (> 0) or decreasing (< 0). 
+```{r, echo=F, warning = F, message=F, error=F}
+no_trend <- pnw_wy %>% 
+  group_by(site_no) %>% 
+  nest() %>% 
+  mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va)))) %>% 
+  unnest() %>% slice(n=1) %>% 
+  filter(p.value > 0.05) %>% 
+  #filter(site_no %in% sample(unique(.$site_no), size = 30)) %>% 
+  select(site_no, statistic, p.value)
+
+mk <- pnw_wy %>% 
+  group_by(site_no) %>% 
+  nest() %>% 
+  mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va)))) %>% 
+  unnest() %>% slice(n=1) %>% 
+  filter(p.value <= 0.05) %>% 
+  #filter(site_no %in% sample(unique(.$site_no), size = 30)) %>% 
+  select(site_no, statistic, p.value) 
+
+stable <-  mk %>% 
+  left_join(pnw_wy, by = 'site_no') %>% filter(!is.na(peak_va)) %>%
+  group_by(site_no) %>% slice(n = 1) %>% pull(site_no)
+stable <- pnw_wy %>% filter(!site_no %in% stable)%>% filter(!is.na(peak_va)) %>%
+  group_by(site_no) %>% slice(n = 1)%>% 
+  st_as_sf(coords = c('long', 'lat'))
+
+
+
+p1 <- mk %>% 
+  left_join(pnw_wy, by = 'site_no') %>% filter(!is.na(peak_va)) %>% 
+  ggplot(aes(wy, peak_va, color = statistic)) + 
+  geom_point(show.legend = T, size = 0.1)+
+  scale_color_gradientn(colors = rev(hcl.colors('Zissou1', n = 32))) +
+  stat_smooth(geom = 'line', method = 'lm', se = F,color = 'black', show.legend = F) + 
+  facet_wrap(~statistic, scales = 'free') +
+  labs(color = 'tau') +
+  theme_void() +
+  theme(strip.text = element_blank(),
+        axis.title.x = element_text(),
+        axis.title.y = element_text(),
+        legend.margin = margin(l = 8, unit='cm'),
+        legend.position = 'bottom',
+        plot.margin = unit(c(0,30,0,0), "pt"))
+
+p2 <- mk %>% 
+  left_join(pnw_wy, by = 'site_no') %>% filter(!is.na(peak_va)) %>%
+  group_by(site_no) %>% slice(n = 1) %>% 
+  st_as_sf(coords = c('long', 'lat')) %>% 
+  ggplot() + 
+  geom_sf(data = stable, shape = 21, size = 1, alpha = 0.25, aes(linetype = 'No Trend')) + guides(linetype = guide_legend(override.aes = list(alpha = 1))) +
+  geom_sf(col = 'black',size = 1.5) + 
+  geom_sf(aes(color = statistic),size = 1, show.legend = F)+  
+  scale_color_gradientn(colors = rev(hcl.colors('Zissou1', n = 32))) +
+  borders('state', xlim = c(-130, -110), ylim = c(20, 50)) + 
+  coord_sf( xlim = c(-125, -110), ylim = c(40, 50)) + 
+  labs(linetype = '', shape = '') + 
+  theme_void()
+
+(p1 + p2 + theme(legend.position = 'top')) +
+  plot_annotation(title = 'Some increasing. Some decreasing. Most no trend.', subtitle =  'Mann-Kendall (Peak Flow)', caption = 'active USGS sites: HUC 17\n30 years or more of data, dam index < 0.05 and drainage area < 2,000 km2')
+
+```
+
+Here's what the no trend data looks like below.  
+
+```{r, echo=F, warning = F, message=F, error=F}
+
+no_trend %>% 
+  left_join(pnw_wy, by = 'site_no') %>% filter(!is.na(peak_va)) %>%
+  ggplot(aes(wy, peak_va, color = statistic)) + 
+  geom_point(show.legend = T, size = 0.1, alpha = 0.5) + 
+  scale_color_gradientn(colors = rev(hcl.colors('Zissou1', n = 32))) +
+  stat_smooth(geom = 'line', method = 'lm', se = F,color = 'black', show.legend = F) + 
+  facet_wrap(~statistic, scales = 'free') +
+  labs(color = 'tau') +
+  theme_void() +
+  theme(strip.text = element_blank(),
+        axis.title.x = element_text(),
+        axis.title.y = element_text(),
+        legend.margin = margin(l = 8, unit='cm'),
+        legend.position = 'bottom',
+        plot.margin = unit(c(0,30,0,0), "pt"))
 ```
 
 
-```{r}
-#install latest dev version of sfdep 
-#remotes::install_github("josiahparry/sfdep")
+Let's take a look at a few of the sites, i.e. one high positive, one low negative.  
 
-library(sfdep)
-
-pnw_wy_filt <- read_csv('C:/Users/joshu/OneDrive/Documents/R/test/playing/pnw_wy_filt.csv') %>% 
-               mutate(site_no = as.character(site_no)) %>% filter(wy >= 1991, wy < 2021)
-pnw_wy_filt_sites <- pnw_wy_filt %>% pull(site_no) %>% unique()
-huc_sites <- st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>% 
-             filter(site_no %in% pnw_wy_filt_sites) 
-huc_sites_dup <- duplicated(huc_sites$site_no)
-huc_sites <- huc_sites[-huc_sites_dup,] %>% 
-             st_as_sf() %>% st_set_crs(4326)
-d = st_is_within_distance(huc_sites, , 0.01)
-dupl = unlist(mapply(function(x,y) x[x < y], d, seq_along(d)))
-huc_sites <- huc_sites[-dupl, ]%>% 
-             st_as_sf() %>% st_set_crs(4326)
-
-pnw_wy_filt <- pnw_wy_filt %>% filter(site_no %in% huc_sites$site_no)
-
-pnw_wy_filt <- pnw_wy_filt %>% select(site_no, peak_va, wy) %>% filter(!is.na(peak_va)) %>% group_by(site_no) %>% 
-               add_count() %>% ungroup() %>% filter(n >= 30)
-
-pnw_wy_filt %>% group_by(site_no) %>% count() %>% view()
-
-huc_sites <- huc_sites %>% filter(site_no %in% unique(pnw_wy_filt$site_no))
-
-pnw_wy_spacetime <- spacetime(pnw_wy_filt,.geometry =  huc_sites,.loc_col =  'site_no',.time_col = 'wy')
-pnw_wy_spacetime <- complete_spacetime_cube(pnw_wy_spacetime)
-
-ehsa <- emerging_hotspot_analysis(
-  x = pnw_wy_spacetime, 
-  .var = "peak_va", 
-  k = 1, 
-  nsim = 99
-)
-
-ehsa %>% count(classification)
-
-ehsa %>% 
-  left_join(huc_sites, by = c('location' = 'site_no')) %>% 
-  st_as_sf() %>% 
-  ggplot() + 
-  geom_sf(aes(color = classification), size = 3.25, color = 'black')+
-  geom_sf(aes(color = classification), size = 2.5)+
-  scale_color_manual(values = rev(hcl.colors('Reds', n = 6))) +
-  borders('state', xlim = c(-130, -110), ylim = c(40, 50)) + 
-  coord_sf( xlim = c(-125, -110), ylim = c(41, 50)) + 
-  theme_void() 
-
-ehsa <- emerging_hotspot_analysis(
-  x = pnw_wy_spacetime, 
-  .var = "peak_va", 
-  k = 1, 
-  nsim = 99
-)
-
-ehsa %>% count(classification)
-
-ehsa %>% 
-  left_join(huc_sites, by = c('location' = 'site_no')) %>% 
-  st_as_sf() %>% 
-  ggplot() + 
-  geom_sf(aes(color = classification), size = 3.25, color = 'black')+
-  geom_sf(aes(color = classification), size = 2.5)+
-  scale_color_manual(values = rev(hcl.colors('Reds', n = 6))) +
-  borders('state', xlim = c(-130, -110), ylim = c(40, 50)) + 
-  coord_sf( xlim = c(-125, -110), ylim = c(41, 50)) + 
-  theme_void() 
+```{r, echo=F, warning = F, message=F, error=F}
+mk %>% 
+  filter(statistic %in% c(max(.$statistic),min(.$statistic))) %>% 
+  select(site_no, statistic, p.value) %>% 
+  left_join(pnw_wy, by = 'site_no') %>% 
+  ggplot(aes(wy, peak_va, color = Station)) + 
+  geom_line(show.legend = F) + 
+  geom_point(show.legend = F) + 
+  stat_smooth(geom = 'line', method = 'lm', se = F,color = 'black', show.legend = F) + 
+  facet_wrap(~Station, scales = 'free') +
+  theme_bw() 
 ```
 
+Now we can compare the minimum for that same water year with the peak and see if there is any dependence/correlation?  
 
+```{r, echo=F, warning = F, message=F, error=F}
+mk %>% 
+  filter(statistic %in% c(max(.$statistic),min(.$statistic))) %>% 
+  select(site_no, statistic, p.value) %>% 
+  left_join(pnw_wy, by = 'site_no') %>% 
+  ggplot(aes(Flow_min, peak_va, color = Station)) + 
+  geom_point(show.legend = F) + 
+  stat_smooth(geom = 'line', method = 'lm', se = F,color = 'black', show.legend = F) + 
+  facet_wrap(~Station, scales = 'free') +
+  theme_bw() 
+
+```
+
+It looks like the gauges with a increasing trend seem to have a correlation. Let's check the other's.  
+
+```{r, echo=F, warning = F, message=F, error=F}
+mk%>% 
+  select(site_no, statistic, p.value) %>% 
+  left_join(pnw_wy, by = 'site_no') %>%
+  ggplot(aes(Flow_min,peak_va)) + 
+  geom_point(show.legend = T, size = 0.1, alpha = 0.5) + 
+  scale_color_gradientn(colors = rev(hcl.colors('Zissou1', n = 32))) +
+  stat_smooth(geom = 'line', method = 'lm', se = F,color = 'black', show.legend = F) + 
+  facet_wrap(~site_no, scales = 'free') +
+  labs(color = 'tau') +
+  theme_void() +
+  theme(strip.text = element_blank(),
+        axis.title.x = element_text(),
+        axis.title.y = element_text(),
+        legend.margin = margin(l = 8, unit='cm'),
+        legend.position = 'bottom',
+        plot.margin = unit(c(0,30,0,0), "pt"))
+```
+
+Some of these bivariate plots have some structure associated with peak flows and flow minimums but most are random! Peak flows are not always associated with lots of water for the year! 
+
+### Wrap-up  
+
+Hopefully this gives you an idea of how to use whitewater with parallel? If you have any questions or issues please submit a issue on [github](https://github.com/joshualerickson/whitewater/issues). Thanks!
 

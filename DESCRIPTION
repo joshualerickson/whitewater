@@ -35,6 +35,9 @@ Suggests:
     rmarkdown,
     knitr,
     future,
+    broom,
+    patchwork,
+    jsonlite,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Depends: 
