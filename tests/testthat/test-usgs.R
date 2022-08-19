@@ -208,22 +208,22 @@ test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
 
   yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
                                   options = wwOptions(date_range = 'date_range',
-                                  dates = c('2022-03-01', '2022-05-11')), verbose = F)
-  expect_equal(nrow(yaak_river_iv), 1704)
+                                  dates = c('2021-08-01', '2021-08-11')), verbose = F)
+  expect_equal(nrow(yaak_river_iv), 241)
 
   yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
                                   options = wwOptions(date_range = 'date_range',
-                                                      dates = c('2022-03-01', '2022-05-11')))
-  expect_equal(nrow(yaak_river_iv), 1704)
+                                                      dates = c('2021-08-01', '2021-08-11')))
+  expect_equal(nrow(yaak_river_iv), 241)
 
   #change the floor value
 
   yaak_river_dv <- ww_dvUSGS('12304500', parameter_cd = c('00060'))
   yaak_river_iv <- ww_floorIVUSGS(yaak_river_dv,
                                   options = wwOptions(date_range = 'date_range',
-                                                      dates = c('2022-03-01', '2022-05-11'),
+                                                      dates = c('2021-08-01', '2021-08-11'),
                                                       floor_iv = '2-hour'))
-  expect_equal(nrow(yaak_river_iv), 853)
+  expect_equal(nrow(yaak_river_iv), 121)
 
   #get recent
 
@@ -256,13 +256,6 @@ test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
                                                             floor_iv = '2-hour'), verbose = T)
 
   expect_equal(nrow(yaak_river_iv), 1)
-
-  yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv,
-                                        options = wwOptions(date_range = 'date_range',
-                                                            dates = c('2022-03-01', '2022-05-11'),
-                                                            floor_iv = '2-hour'))
-
-  expect_equal(nrow(yaak_river_iv), 6813)
 
 
 
@@ -307,3 +300,11 @@ test_that("usgs flow with verbose off", {
 
 })
 
+
+
+test_that("usgs peaks", {
+
+  yaak_peak <- ww_peakUSGS(sites = '12304500', parallel = F)
+
+  expect_equal(yaak_peak[1,]$wy, 1948)
+})

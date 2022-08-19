@@ -122,7 +122,8 @@ ww_dvUSGS <- function(sites,
                          month_day = str_c(month, day, sep = "-"),
                          wy = waterYear(Date, wy_month, TRUE),
                          month_abb = factor(month.abb[month], levels = month.abb),
-                         month_day = str_c(month, day, sep = "-")) %>%
+                         month_day = str_c(month, day, sep = "-"),
+                         drainage_area = drainage_area*0.621371) %>%
                   add_date_counts()
 
   attr(usgs_raw_dv, 'wy_month') <- wy_month
@@ -160,7 +161,6 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
   gage_info <- tibble(
     site_no = site_no,
     drainage_area = readNWISsite(site_no) %>% select(drain_area_va) %>% as.numeric(),
-    drainage_area = drainage_area*0.621371,
     Station = readNWISsite(site_no) %>% select(station_nm) %>% as.character(),
     lat = readNWISsite(site_no) %>% select(dec_lat_va) %>% as.numeric(),
     long = readNWISsite(site_no) %>% select(dec_long_va) %>% as.numeric(),
@@ -354,7 +354,7 @@ if(isTRUE(verbose)){
 #' @return a \code{tibble} with peaks by water year
 #' @export
 
-ww_peakUSGS <- function(sites, parallel,wy_month = 10,verbose = TRUE, ...) {
+ww_peakUSGS <- function(sites, parallel = FALSE,wy_month = 10,verbose = TRUE, ...) {
 
   peak_sites <- data.frame(peaks = sites)
 

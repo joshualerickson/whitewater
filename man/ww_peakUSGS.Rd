@@ -4,7 +4,7 @@
 \alias{ww_peakUSGS}
 \title{Get Peak Flows}
 \usage{
-ww_peakUSGS(sites, parallel, wy_month = 10, verbose = TRUE, ...)
+ww_peakUSGS(sites, parallel = FALSE, wy_month = 10, verbose = TRUE, ...)
 }
 \arguments{
 \item{sites}{A vector of USGS NWIS sites}
