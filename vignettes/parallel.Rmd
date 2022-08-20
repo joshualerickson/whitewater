@@ -212,11 +212,7 @@ p2 <- pnw_wy %>%
 (p2|p1 + theme(legend.position = 'bottom', legend.margin = margin(l = -10, unit='cm'))) +
   plot_annotation(title = 'Mann-Kendall trend analysis (Peak Flow) with active USGS sites in Region 17', subtitle =  '30 years or more of data, current, dam index < 0.05 and drainage area < 2,000 km2')
 ```
-In the graph above we can see that the data is skewed left with a decent amount of values (`r pnw_wy %>% 
-  group_by(site_no) %>% 
-  nest() %>% 
-  mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va))['p.value'])) %>% 
-  unnest() %>% slice(n=1) %>% filter(p.value <= 0.05) %>% nrow()`) equal to or below 0.05! But are they increasing or decreasing? For that we can use the `statistic` from the Mann-Kendall function to see if the trend is increasing (> 0) or decreasing (< 0). 
+In the graph above we can see that the data is skewed left with a decent amount of values equal to or below 0.05! But are they increasing or decreasing? For that we can use the `statistic` from the Mann-Kendall function to see if the trend is increasing (> 0) or decreasing (< 0). 
 ```{r, echo=F, warning = F, message=F, error=F}
 no_trend <- pnw_wy %>% 
   group_by(site_no) %>% 
