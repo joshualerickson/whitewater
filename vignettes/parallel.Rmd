@@ -13,8 +13,8 @@ editor_options:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  dev.args = list(png = list(type = "cairo")),
-  fig.align='center', fig.height=6, fig.width=8
+  fig.align='center', fig.height=6, fig.width=8,
+  dev.args = list(png = list(type = "cairo"))
 )
 
 data("pnw_wy", package = 'whitewater')
@@ -106,7 +106,7 @@ pnw_wy <- pnw_wy %>% mutate(decade = 10+(10*(lubridate::year(peak_dt) %/% 10)),
                             decade = ifelse(decade == 2020, 2018, decade))
 ```
 
-Second, we'll dive into the dam situation. You'll need to download a zip file from [here](https://www.sciencebase.gov/catalog/item/5fb7e483d34eb413d5e14873). The name of the zip file we need is `DamIndex_PMC.zip`. This will download a bunch of csv's that we'll bind together so that we can take out any decades with greater than 0.01 DI. This will allow for watersheds that have dams but are almost negligible when it comes to a peak flow analysis.    
+Second, we'll dive into the dam situation. You'll need to download a zip file from [here](https://www.sciencebase.gov/catalog/item/5fb7e483d34eb413d5e14873). The name of the zip file we need is `DamIndex_PMC.zip`. This will download a bunch of csv's that we'll bind together so that we can take out any decades with greater than 0.05 DI. This will allow for watersheds that have dams but are almost negligible when it comes to a peak flow analysis.    
 
 ```{r,eval = F, echo=T, warning = F, message=F, error=F}
 
