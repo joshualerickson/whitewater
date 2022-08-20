@@ -1,0 +1,12 @@
+pandoc: 2.14.0.3
+pkgdown: 2.0.3
+pkgdown_sha: ~
+articles:
+  get_dv: get_dv.html
+  parallel: parallel.html
+  stats: stats.html
+last_built: 2022-08-20T22:47Z
+urls:
+  reference: https://joshualerickson.github.io/whitewater/reference
+  article: https://joshualerickson.github.io/whitewater/articles
+

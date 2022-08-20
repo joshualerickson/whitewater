@@ -28,7 +28,7 @@ Running repetitive tasks in parallel can save a lot of time (of course) but it c
 
 First we'll need to load a few packages and then we can get started. We'll use the function `dataRetrieval::whatNWISdata()` to get active gauging stations with drainage areas less than 2,000 sq.km's. From there, we can then use the station site id's to get the actual daily flow values over time.  
 
-```{r, eval=F, warning=F, message=F}
+```{r, eval=T, warning=F, message=F}
 library(whitewater)
 library(sf)
 library(future)
@@ -162,7 +162,7 @@ pnw_wy <- pnw_wy %>%
 ```
 One final step! Since we are taking out years with a dam index >= 0.05, we'll need to make sure that we have current years available (2018, 2019, 2020, etc). What's nice about using Mann-Kendall trend analysis is that it's not too sensitive to missing years; however, years spanning several years or large gaps in the data will not truly represent the test you are looking for. Therefore, we'll need to take out large gaps as well.  
 
-```{r, eval = F, echo=T, warning = F, message=F, error=F}
+```{r, eval = T, echo=T, warning = F, message=F, error=F}
 pnw_wy_current <-   pnw_wy %>% 
                     group_by(site_no) %>% 
                     summarise(n = n(),
@@ -189,7 +189,7 @@ pnw_wy <- pnw_wy %>%
 cat("# of sites after filtering: ", length(unique(pnw_wy$site_no)))
 ```
 
-```{r, eval = F, echo=F, warning = F, message=F, error=F}
+```{r, eval = T, echo=F, warning = F, message=F, error=F}
  p1 <-  pnw_wy %>% 
   group_by(site_no) %>% 
   nest() %>% 
@@ -219,7 +219,7 @@ p2 <- pnw_wy %>%
   plot_annotation(title = 'Mann-Kendall trend analysis (Peak Flow) with active USGS sites in Region 17', subtitle =  '30 years or more of data, current, dam index < 0.05 and drainage area < 2,000 km2')
 ```
 In the graph above we can see that the data is skewed left with a decent amount of values equal to or below 0.05! But are they increasing or decreasing? For that we can use the `statistic` from the Mann-Kendall function to see if the trend is increasing (> 0) or decreasing (< 0). 
-```{r, eval = F, echo=F, warning = F, message=F, error=F}
+```{r, eval = T, echo=F, warning = F, message=F, error=F}
 no_trend <- pnw_wy %>% 
   group_by(site_no) %>% 
   nest() %>% 
@@ -284,7 +284,7 @@ p2 <- mk %>%
 
 Here's what the no trend data looks like below.  
 
-```{r, eval = F, echo=F, warning = F, message=F, error=F}
+```{r, eval = T, echo=F, warning = F, message=F, error=F}
 
 no_trend %>% 
   left_join(pnw_wy, by = 'site_no') %>% filter(!is.na(peak_va)) %>%
@@ -306,7 +306,7 @@ no_trend %>%
 
 Let's take a look at a few of the sites, i.e. one high positive, one low negative.  
 
-```{r, eval = F, echo=F, warning = F, message=F, error=F}
+```{r, eval = T, echo=F, warning = F, message=F, error=F}
 mk %>% 
   filter(statistic %in% c(max(.$statistic),min(.$statistic))) %>% 
   select(site_no, statistic, p.value) %>% 
@@ -321,7 +321,7 @@ mk %>%
 
 Now we can compare the minimum for that same water year with the peak and see if there is any dependence/correlation?  
 
-```{r, eval = F, echo=F, warning = F, message=F, error=F}
+```{r, eval = T, echo=F, warning = F, message=F, error=F}
 mk %>% 
   filter(statistic %in% c(max(.$statistic),min(.$statistic))) %>% 
   select(site_no, statistic, p.value) %>% 
@@ -336,7 +336,7 @@ mk %>%
 
 It looks like the gauges with a increasing trend seem to have a correlation. Let's check the other's.  
 
-```{r, eval = F, echo=F, warning = F, message=F, error=F}
+```{r, eval = T, echo=F, warning = F, message=F, error=F}
 mk%>% 
   select(site_no, statistic, p.value) %>% 
   left_join(pnw_wy, by = 'site_no') %>%
