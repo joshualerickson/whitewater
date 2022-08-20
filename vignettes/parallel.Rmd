@@ -13,10 +13,11 @@ editor_options:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  dev.args = list(png = list(type = "cairo")), fig.align='center', fig.height=6, fig.width=8
+  dev.args = list(png = list(type = "cairo")),
+  fig.align='center', fig.height=6, fig.width=8
 )
 
-data("pnw_wy")
+data("pnw_wy", package = 'whitewater')
 ```
 
 ## Intro  
