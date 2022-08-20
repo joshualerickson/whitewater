@@ -15,8 +15,8 @@ knitr::opts_chunk$set(
   comment = "#>",
   dev.args = list(png = list(type = "cairo")), fig.align='center', fig.height=6, fig.width=8
 )
-library(dplyr)
-pnw_wy <- readr::read_csv('vignettes/pnw_wy.csv')
+
+data("pnw_wy")
 ```
 
 ## Intro  
@@ -32,6 +32,7 @@ library(whitewater)
 library(sf)
 library(future)
 library(furrr)
+library(purrr)
 library(dataRetrieval)
 library(patchwork)
 library(broom)
