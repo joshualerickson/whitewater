@@ -80,7 +80,7 @@ add_date_counts <- function(data) {
 #' @param wy_month A numeric
 #' @param leap Logical
 #' @return A numeric value
-#'
+#' @noRd
 month_to_doy <- function(wy_month, leap = FALSE) {
 
 

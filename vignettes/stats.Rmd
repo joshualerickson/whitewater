@@ -10,10 +10,203 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+   fig.align='center',
+  fig.height=6, 
+  fig.width=8,
+  dev.args = list(png = list(type = "cairo"))
 )
+
+ggplot2::theme_set(ggplot2::theme_bw())
 ```
 
 ```{r setup}
 library(whitewater)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(sf)
+library(future)
 ```
+
+
+## Intro  
+
+Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows. The `ww_statsUSGS()` function does this for you! It takes the historical values for your parameter (flow in this example) and returns percentiles but also combines the current values like in the figure below. In this vignette we'll go over the different options/arguments in the `ww_statsUSGS()`. Let's go!
+
+```{r}
+
+yaak_dv <- ww_dvUSGS(sites = '12304500', parameter_cd = '00060')
+
+yaak_daily_report <- yaak_dv %>% ww_statsUSGS(temporalFilter = 'daily',
+                                  days = 365)
+yaak_daily_report %>% 
+  pivot_longer(c('Flow', 'p25_va', 'p75_va', 'max_va', 'min_va')) %>% 
+  ggplot() + 
+  geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))) + 
+  scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
+  scale_alpha_manual(values = c(1,.5), guide = 'none') +
+  labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to Max, Min, 25th and 75th percentiles') + 
+  theme_bw()
+```
+
+
+## ww_statsUSGS()  
+
+The `ww_statsUSGS()` is essentially a wrapper around `dataRetrieval::readNWISstat()` but in addition will take the parameter values ('Flow', 'Wtemp', etc) calculated from the `ww_floorIVUSGS()`
+function and add to the data as well. Thus, the instantaneous values will look different than the daily mean values, as it should. Just like dataRetrieval, there are three different flavors of temporal windows that we can choose from: daily, monthly and yearly.  
+
+### daily  
+
+The `temporalFilter` argument is used to generate the window of percentiles. Like in the example below we just want to get the last 30 days of daily stats so we'll put `temporalFilter = 'daily'` and `days = 30`. The `days` arguments is only used for `daily` but will go back the amount of days you input.  
+
+```{r}
+yaak_daily_report_30 <- yaak_dv %>% ww_statsUSGS(temporalFilter = 'daily',
+                                  days = 30)
+yaak_daily_report_30
+```
+
+```{r, echo=F}
+yaak_daily_report_30 %>% 
+  pivot_longer(c('Flow', 'p25_va', 'p75_va', 'max_va', 'min_va')) %>% 
+  ggplot() + 
+  geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))) + 
+  scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
+  scale_alpha_manual(values = c(1,.5), guide = 'none') +
+  labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to Max, Min, 25th and 75th percentiles') + 
+  theme_bw()
+```
+
+If we want to compare multiple sites that fine too! In addition, you don't have to pipe a `ww_dvUSGS()` object into the function either. You can just input the sites you want; however, I always recommend using `ww_dvUSGS()` because you'll likely come back to the daily values anyway but in the example below we'll just call with inputting the sites into the `sites` argument. If you're going to use the `sites` argument you'll also need to specify the `parameter_cd`!   
+
+```{r}
+
+multiple_sites <- ww_statsUSGS(sites = c('12304500', '14159200'),
+                               parameter_cd = '00060',
+                               temporalFilter = 'daily', 
+                               days = 30)
+  
+
+```
+```{r, echo = F}
+multiple_sites %>% 
+  pivot_longer(c('Flow', 'p25_va', 'p75_va', 'max_va', 'min_va')) %>% 
+  ggplot() + 
+  geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))) + 
+  scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
+  scale_alpha_manual(values = c(1,.5), guide = 'none') +
+  labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to Max, Min, 25th and 75th percentiles') + 
+  facet_wrap(~Station, scales = 'free')
+```
+
+
+What's nice about this is you can run in parallel using the argument `parallel = TRUE` (see [Parallel](https://joshualerickson.github.io/whitewater/articles/parallel.html) vignette for more details on parallel processing). We'll use the sites from the parallel vignette and then view the last 30 days!  
+
+```{r, warning=F, message=F, error=F}
+data("pnw_wy")
+
+pnw_wy_current <-   pnw_wy %>% 
+                    group_by(site_no) %>% 
+                    summarise(n = n(),
+                              max_wy = max(wy)) %>% 
+                    filter(max_wy >=2018) %>% 
+                    pull(site_no)
+
+
+pnw_wy <- pnw_wy %>% filter(site_no %in% pnw_wy_current)
+
+pnw_wy <- pnw_wy %>% 
+          group_by(site_no) %>% 
+          mutate(diff = wy - lag(wy),
+                 diff = if_else(is.na(diff), as.numeric(1), diff),
+                 logical = diff > 3,
+                 last_logical = last(which(logical)),
+                 last_logical = if_else(is.na(last_logical), first(which(!logical)), last_logical),
+                 last_row = dplyr::last(which(!logical))) %>% 
+          slice(last_logical:last_row) %>% 
+                  add_count() %>% 
+                  filter( n > 30)  %>% 
+          ungroup
+
+plan(multisession(workers = 10))
+
+pnw_stats_30 <- ww_statsUSGS(sites = unique(as.character(pnw_wy$site_no)),
+                             parameter_cd = '00060', 
+                             temporalFilter = 'daily',
+                             days = 30,
+                             parallel = TRUE,
+                             verbose = FALSE)
+```
+
+Then we can use the `ww_current_conditions()` to get the current values (flow) range.
+
+```{r, echo=F}
+
+current_condition <- ww_current_conditions()
+
+ranking_flow <- pnw_stats_30 %>% left_join(current_condition %>% 
+                                             select(site_no = "SiteNumber",
+                                                    StatisticsStatusDescription,
+                                                    StatisticStatusCode))
+
+mind <- min(pnw_stats_30$Date, na.rm = T)
+maxd <- max(pnw_stats_30$Date, na.rm = T)
+
+p1 <- ranking_flow %>% 
+  filter(!StatisticsStatusDescription %in% c("Not ranked",
+                                             "NA", NA, "Not flowing")) %>% 
+  group_by(site_no) %>% 
+  slice(n = 1) %>% 
+  ungroup() %>% 
+  arrange(desc(StatisticsStatusDescription)) %>% 
+  mutate(rank = row_number()) %>% 
+  select(rank, site_no) %>% 
+  left_join(ranking_flow, by = 'site_no') %>% 
+  ggplot(aes(Date)) + 
+  geom_line(aes(y = Flow, color = StatisticsStatusDescription), show.legend = F) + 
+  scale_color_manual(values = c('pink', 'darkred', 'gold', 'green', 'dodgerblue', 'darkblue')) +
+  geom_ribbon(aes(ymin = p25_va, ymax = p75_va), fill = 'grey40', alpha = 0.25) +
+  labs(y = 'Discharge (cfs)',
+       color = '',
+       title = 'Comparing current flow to 25th and 75th percentiles',
+       subtitle = paste0('Dates: ', mind,' to ', maxd)) + 
+  facet_wrap(~rank, scales = 'free')+
+  theme_void() +
+  theme(strip.text = element_blank(),
+        axis.title.x = element_text(),
+        axis.title.y = element_text(angle = 90,margin = unit(c(0, 3, 0, 0), 'mm')),
+        plot.subtitle = element_text(margin = unit(c(0, 0, 3, 0), 'mm')),
+        plot.title = element_text(margin = unit(c(0, 0, 3, 0), 'mm')))
+p1
+```
+
+
+```{r, echo = F, warning=F, message=F, error=F}
+p2 <- ranking_flow %>% 
+  filter(!StatisticsStatusDescription %in% c("Not ranked",
+                                             "NA", NA, "Not flowing")) %>% 
+  group_by(site_no) %>% 
+  slice(n = 1) %>% 
+  left_join(pnw_wy %>% mutate(site_no = as.character(site_no)) %>% 
+              select(site_no, long, lat)) %>% 
+  ungroup() %>% 
+  st_as_sf(coords = c('long', 'lat'), crs = 4326) %>% 
+  ggplot() + 
+  geom_sf(aes(color = StatisticsStatusDescription,
+              shape = StatisticsStatusDescription),size = 1, show.legend = T)+  
+  scale_color_manual(values = c('firebrick', 'darkred', 'gold', 'green', 'dodgerblue', 'darkblue'),
+                     guide=guide_legend(override.aes=list(shape=c(4,rep(20,5))))) +
+  scale_shape_manual(values = c(4,rep(20,5)), guide = 'none') + 
+  borders('state', xlim = c(-130, -110), ylim = c(20, 50)) + 
+  coord_sf( xlim = c(-125, -110), ylim = c(40, 50)) + 
+  labs(linetype = '', shape = '', color = "Streamflow: Status") + 
+  theme_void() 
+p2
+```
+
+
+
+
+
+
+
