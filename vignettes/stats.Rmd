@@ -27,12 +27,14 @@ library(dplyr)
 library(tidyr)
 library(sf)
 library(future)
+library(ggfx)
+library(geomtextpath)
 ```
 
 
 ## Intro  
 
-Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows. The `ww_statsUSGS()` function does this for you! It takes the historical values for your parameter (flow in this example) and returns percentiles but also combines the current values like in the figure below. In this vignette we'll go over the different options/arguments in the `ww_statsUSGS()`. Let's go!
+Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows (figure below). The `ww_statsUSGS()` function does this for you! It takes the historical values for your parameter (flow in this example) and returns percentiles for site site but also combines the current values and current conditions if using parameter code '00060' from the [USGS dashboard](https://dashboard.waterdata.usgs.gov/app/nwd/?aoi=default). In this vignette we'll go over the different options/arguments in the `ww_statsUSGS()`.    
 
 ```{r}
 
@@ -43,7 +45,7 @@ yaak_daily_report <- yaak_dv %>% ww_statsUSGS(temporalFilter = 'daily',
 yaak_daily_report %>% 
   pivot_longer(c('Flow', 'p25_va', 'p75_va', 'max_va', 'min_va')) %>% 
   ggplot() + 
-  geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))) + 
+  with_outer_glow(geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))), sigma = .5) + 
   scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
   scale_alpha_manual(values = c(1,.5), guide = 'none') +
   labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to Max, Min, 25th and 75th percentiles') + 
@@ -70,7 +72,7 @@ yaak_daily_report_30
 yaak_daily_report_30 %>% 
   pivot_longer(c('Flow', 'p25_va', 'p75_va', 'max_va', 'min_va')) %>% 
   ggplot() + 
-  geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))) + 
+  with_outer_glow(geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va')))) + 
   scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
   scale_alpha_manual(values = c(1,.5), guide = 'none') +
   labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to Max, Min, 25th and 75th percentiles') + 
@@ -89,48 +91,29 @@ multiple_sites <- ww_statsUSGS(sites = c('12304500', '14159200'),
 
 ```
 ```{r, echo = F}
+
 multiple_sites %>% 
-  pivot_longer(c('Flow', 'p25_va', 'p75_va', 'max_va', 'min_va')) %>% 
-  ggplot() + 
-  geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))) + 
-  scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
-  scale_alpha_manual(values = c(1,.5), guide = 'none') +
+  rename(`Current Flow` = 'Flow', `25%` = 'p25_va', `75%` = 'p75_va', Max = 'max_va', Min = 'min_va') %>% 
+  pivot_longer(c(`Current Flow`,`25%`, `75%`, 'Max', 'Min')) %>% 
+  mutate(name = factor(name, levels = c('Current Flow', 'Max', 'Min', '25%', '75%'))) %>% 
+  ggplot() +
   labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to Max, Min, 25th and 75th percentiles') + 
+  with_outer_glow(geomtextpath::geom_textpath(aes(Date, value, color = name, label = name, alpha = name %in% c('Current Flow','25%', '75%', 'Max', 'Min')),text_smoothing = 30,hjust = 1, show.legend = F), sigma = .5)+ 
+  scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
+  scale_alpha_manual(values = c(1,.5), guide = 'none')  + 
   facet_wrap(~Station, scales = 'free')
 ```
 
 
-What's nice about this is you can run in parallel using the argument `parallel = TRUE` (see [Parallel](https://joshualerickson.github.io/whitewater/articles/parallel.html) vignette for more details on parallel processing). We'll use the sites from the parallel vignette and then view the last 30 days!  
+What's nice about this is you can run in parallel using the argument `parallel = TRUE` (see [Parallel](https://joshualerickson.github.io/whitewater/articles/parallel.html) vignette for more details on parallel processing). We'll use the `ww_current_conditions()` to get the current streamflow status for the lower 48 that has a description of `All-time low for this day` and then we'll use these sites to view the last 30 days!  
 
 ```{r, warning=F, message=F, error=F}
-data("pnw_wy")
 
-pnw_wy_current <-   pnw_wy %>% 
-                    group_by(site_no) %>% 
-                    summarise(n = n(),
-                              max_wy = max(wy)) %>% 
-                    filter(max_wy >=2018) %>% 
-                    pull(site_no)
-
-
-pnw_wy <- pnw_wy %>% filter(site_no %in% pnw_wy_current)
-
-pnw_wy <- pnw_wy %>% 
-          group_by(site_no) %>% 
-          mutate(diff = wy - lag(wy),
-                 diff = if_else(is.na(diff), as.numeric(1), diff),
-                 logical = diff > 3,
-                 last_logical = last(which(logical)),
-                 last_logical = if_else(is.na(last_logical), first(which(!logical)), last_logical),
-                 last_row = dplyr::last(which(!logical))) %>% 
-          slice(last_logical:last_row) %>% 
-                  add_count() %>% 
-                  filter( n > 30)  %>% 
-          ungroup
+current_condition <- ww_current_conditions() %>% filter(StatisticsStatusDescription %in% c('All-time low for this day'))
 
 plan(multisession(workers = 10))
 
-pnw_stats_30 <- ww_statsUSGS(sites = unique(as.character(pnw_wy$site_no)),
+atl_sites <- ww_statsUSGS(sites = unique(current_condition$SiteNumber),
                              parameter_cd = '00060', 
                              temporalFilter = 'daily',
                              days = 30,
@@ -138,41 +121,38 @@ pnw_stats_30 <- ww_statsUSGS(sites = unique(as.character(pnw_wy$site_no)),
                              verbose = FALSE)
 ```
 
-Then we can use the `ww_current_conditions()` to get the current values (flow) range.
 
-```{r, echo=F}
+```{r, echo=F, warning=F, message=F, error=F}
 
-current_condition <- ww_current_conditions()
-
-ranking_flow <- pnw_stats_30 %>% left_join(current_condition %>% 
+ranking_flow <- atl_sites %>% left_join(current_condition  %>% 
+                                          filter(!TimeZoneCode %in% c('AKDT', 'AST','HST')) %>% 
                                              select(site_no = "SiteNumber",
                                                     StatisticsStatusDescription,
-                                                    StatisticStatusCode))
+                                                    StatisticStatusCode,
+                                                    StatisticsStatusColorFill,
+                                                    StatisticsStatusColorStroke,
+                                                    Latitude,
+                                                    Longitude))
 
-mind <- min(pnw_stats_30$Date, na.rm = T)
-maxd <- max(pnw_stats_30$Date, na.rm = T)
+mind <- min(atl_sites$Date, na.rm = T)
+maxd <- max(atl_sites$Date, na.rm = T)
+
+
 
 p1 <- ranking_flow %>% 
-  filter(!StatisticsStatusDescription %in% c("Not ranked",
-                                             "NA", NA, "Not flowing")) %>% 
-  group_by(site_no) %>% 
-  slice(n = 1) %>% 
-  ungroup() %>% 
-  arrange(desc(StatisticsStatusDescription)) %>% 
-  mutate(rank = row_number()) %>% 
-  select(rank, site_no) %>% 
-  left_join(ranking_flow, by = 'site_no') %>% 
+  mutate(Flow = if_else(Flow == "NaN", NA_real_, Flow)) %>% 
+  filter(!is.na(Flow), !is.na(StatisticsStatusDescription)) %>% 
   ggplot(aes(Date)) + 
-  geom_line(aes(y = Flow, color = StatisticsStatusDescription), show.legend = F) + 
-  scale_color_manual(values = c('pink', 'darkred', 'gold', 'green', 'dodgerblue', 'darkblue')) +
-  geom_ribbon(aes(ymin = p25_va, ymax = p75_va), fill = 'grey40', alpha = 0.25) +
+  with_outer_glow(geom_line(aes(y = Flow), color = '#FF0000', show.legend = F)) +
+  with_inner_glow(geom_ribbon(aes(ymin = p25_va, ymax = p75_va), fill = 'grey75', alpha = 0.2)) + 
   labs(y = 'Discharge (cfs)',
        color = '',
        title = 'Comparing current flow to 25th and 75th percentiles',
-       subtitle = paste0('Dates: ', mind,' to ', maxd)) + 
-  facet_wrap(~rank, scales = 'free')+
+       subtitle = paste0('Dates: ', mind,' to ', maxd)) +
+  facet_wrap(~site_no, scales = 'free') +
   theme_void() +
-  theme(strip.text = element_blank(),
+  theme(text=element_text(size=10,  family="Comic Sans MS"),
+        strip.text = element_blank(),
         axis.title.x = element_text(),
         axis.title.y = element_text(angle = 90,margin = unit(c(0, 3, 0, 0), 'mm')),
         plot.subtitle = element_text(margin = unit(c(0, 0, 3, 0), 'mm')),
@@ -182,31 +162,83 @@ p1
 
 
 ```{r, echo = F, warning=F, message=F, error=F}
+
 p2 <- ranking_flow %>% 
-  filter(!StatisticsStatusDescription %in% c("Not ranked",
-                                             "NA", NA, "Not flowing")) %>% 
   group_by(site_no) %>% 
   slice(n = 1) %>% 
-  left_join(pnw_wy %>% mutate(site_no = as.character(site_no)) %>% 
-              select(site_no, long, lat)) %>% 
+  filter(!is.na(Longitude)) %>% 
   ungroup() %>% 
-  st_as_sf(coords = c('long', 'lat'), crs = 4326) %>% 
+  st_as_sf(coords = c('Longitude', 'Latitude'), crs = 4326) %>% filter(!is.na(StatisticsStatusDescription)) %>% 
   ggplot() + 
-  geom_sf(aes(color = StatisticsStatusDescription,
-              shape = StatisticsStatusDescription),size = 1, show.legend = T)+  
-  scale_color_manual(values = c('firebrick', 'darkred', 'gold', 'green', 'dodgerblue', 'darkblue'),
-                     guide=guide_legend(override.aes=list(shape=c(4,rep(20,5))))) +
-  scale_shape_manual(values = c(4,rep(20,5)), guide = 'none') + 
-  borders('state', xlim = c(-130, -110), ylim = c(20, 50)) + 
-  coord_sf( xlim = c(-125, -110), ylim = c(40, 50)) + 
-  labs(linetype = '', shape = '', color = "Streamflow: Status") + 
-  theme_void() 
+  with_inner_glow(borders('state',fill = 'white'),sigma = 4) + 
+geom_sf(color = '#FF0000', aes(color = StatisticsStatusDescription,
+                               fill = StatisticsStatusDescription),
+        stroke = .25, size = 1.25, shape = 21, show.legend = F) +
+  scale_fill_manual(values = "#FF0000") + 
+  scale_color_manual(values = "#990000") +
+  theme_void() +
+  labs(
+       title = 'USGS Sites with Current Streamflow Status at "All-time low"',
+       subtitle = paste0('Date: ', maxd))+
+  theme(text=element_text(size=10,  family="Comic Sans MS"))
 p2
 ```
 
+### monthly and annual   
+
+Now we can looked into the other temporal windows like `monthly` and `annual`. These work the same as daily but now we just need to change the argument.  
+
+```{r}
+
+monthly_stats <- ww_statsUSGS(yaak_dv, temporalFilter = 'monthly')
+
+monthly_stats %>% 
+  filter(month == 8) %>% 
+  mutate(diff = mean_value-p50_va,
+         Status = if_else(diff > 0, "Above normal", "Below normal")) %>% 
+  ggplot(aes(year_nu, diff, fill = Status)) + 
+  with_outer_glow(geom_col(), sigma = 1) +
+  scale_fill_manual(values = c("#009900","#996600")) +
+  labs(y = 'Discharge (cfs)', x = 'Year', color = '', title = 'Comparing monthly mean flow in August to 50% percentile') + 
+  theme_bw()
+```
 
 
+This looks interesting! What about the sites that have all-time low for today? Well, just like above we change the `temporalFilter` argument to `monthly` instead of `daily` and then use those site numbers to get back a tibble with mean monthly flows and statistics for each month per year per site.  
+
+```{r, echo = F, warning=F, message=F, error=F}
+
+atl_sites_monthly <- ww_statsUSGS(sites = unique(current_condition$SiteNumber),
+                             parameter_cd = '00060', 
+                             temporalFilter = 'monthly',
+                             days = 30,
+                             parallel = TRUE,
+                             verbose = FALSE)
+```
 
 
-
+```{r, echo = F, warning=F, message=F, error=F}
+atl_sites_monthly %>% 
+  filter(month == 8) %>% 
+  group_by(site_no) %>% 
+  nest() %>% 
+  .[1:50,] %>%  
+  unnest() %>% 
+  ungroup() %>% 
+  mutate(diff = mean_value-p50_va,
+         Status = if_else(diff > 0, "Above normal", "Below normal")) %>% 
+  filter(Status == "Below normal") %>% 
+  ggplot(aes(year_nu, diff, fill = Status)) + 
+  geom_col() +
+  scale_fill_manual(values = c("#009900","#996600")) +
+  labs(y = 'Discharge (cfs)', x = 'Year', color = '', title = 'Comparing monthly mean flow in August to 50% percentile') + 
+  theme_void() +
+  facet_wrap(~site_no, scales = 'free') +
+  theme(
+        strip.text = element_blank(),
+        axis.title.x = element_text(),
+        axis.title.y = element_text(angle = 90,margin = unit(c(0, 3, 0, 0), 'mm')),
+        plot.subtitle = element_text(margin = unit(c(0, 0, 3, 0), 'mm')),
+        plot.title = element_text(margin = unit(c(0, 0, 3, 0), 'mm')))
+```
 

@@ -58,6 +58,9 @@ ww_dvUSGS <- function(sites,
                          verbose = TRUE,
                          ...) {
 
+
+  if(!is.character(sites)) sites = as.character(sites)
+
   site_id_usgs <- data.frame(sites = sites)
 
   if(isTRUE(parallel)){
@@ -1212,6 +1215,8 @@ ww_reportUSGSdv <- function(procDV,
                             ...) {
 
 
+  if(!is.character(sites)) sites <- as.character(sites)
+
   site_station_days <- prepping_reports(procDV, sites, parameter_cd)
 
   #run over api, pulling necessary data.
@@ -1393,7 +1398,7 @@ ww_current_conditions <- function(){
                       StatisticStatusCode == "P25_75"~"Normal",
                       StatisticStatusCode == "P75_90"~"Above normal",
                       StatisticStatusCode == "P90_100"~"Much above normal",
-                      StatisticStatusCode == "P100"~'All-time high for this day ',
+                      StatisticStatusCode == "P100" ~ 'All-time high for this day',
                       StatisticStatusCode == "NR_0FLOW"~"Not flowing",
                       StatisticStatusCode == "NR_REVFLOW"~"Not ranked",
                       StatisticStatusCode == "NR_NOMEAS"~"Measurement flag",
@@ -1410,7 +1415,34 @@ ww_current_conditions <- function(){
                                                                     "Normal",
                                                                     "Above normal",
                                                                     "Much above normal",
-                                                                    "All-time high for this day"))
+                                                                    "All-time high for this day")),
+                    StatisticsStatusColorFill = dplyr::case_when(
+                      StatisticsStatusDescription == "Not ranked" ~ '#999999',
+                      StatisticsStatusDescription == "Measurement flag" ~ '#989898',
+                      StatisticsStatusDescription == "Not flowing" ~ '#a9a9a9',
+                      StatisticsStatusDescription == "All-time low for this day" ~ "#FF0000",
+                      StatisticsStatusDescription == "Much below normal" ~ "#BB2222",
+                      StatisticsStatusDescription == "Below normal" ~ "#FFAA00",
+                      StatisticsStatusDescription == "Normal" ~ "#00ff00",
+                      StatisticsStatusDescription == "Above normal" ~ "#44dddd",
+                      StatisticsStatusDescription == "Much above normal" ~ "#00ffff",
+                      StatisticsStatusDescription == "All-time high for this day" ~ "#000055",
+                      TRUE ~ NA_character_
+
+                    ),
+                    StatisticsStatusColorStroke = dplyr::case_when(
+                      StatisticsStatusDescription == "Not ranked" ~ '#666666',
+                      StatisticsStatusDescription == "Measurement flag" ~ '#996633',
+                      StatisticsStatusDescription == "Not flowing" ~ '#997700',
+                      StatisticsStatusDescription == "All-time low for this day" ~ "#990000",
+                      StatisticsStatusDescription == "Much below normal" ~ "#661111",
+                      StatisticsStatusDescription == "Below normal" ~ "#996600",
+                      StatisticsStatusDescription == "Normal" ~ "#009900",
+                      StatisticsStatusDescription == "Above normal" ~ "#11aaaa",
+                      StatisticsStatusDescription == "Much above normal" ~ "#000099",
+                      StatisticsStatusDescription == "All-time high for this day" ~ "#000000",
+                      TRUE ~ NA_character_
+                    )
                     )
 }
 
@@ -1468,7 +1500,8 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
 
     summary_stats <- usgs_statsmv %>%
                       group_by(Station, parameter_cd, month = month_nu) %>%
-                      summarize(p95_va = quantile(mean_va, probs = .95, na.rm = TRUE),
+                      summarize(p100_va = quantile(mean_va, probs = 1, na.rm = TRUE),
+                                p95_va = quantile(mean_va, probs = .95, na.rm = TRUE),
                                 p90_va = quantile(mean_va, probs = .90, na.rm = TRUE),
                                 p80_va = quantile(mean_va, probs = .80, na.rm = TRUE),
                                 p75_va = quantile(mean_va, probs = .75, na.rm = TRUE),
@@ -1476,13 +1509,34 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
                                 p25_va = quantile(mean_va, probs = .25, na.rm = TRUE),
                                 p20_va = quantile(mean_va, probs = .20, na.rm = TRUE),
                                 p10_va = quantile(mean_va, probs = 0.1, na.rm = TRUE),
-                                p05_va = quantile(mean_va, probs = 0.05, na.rm = TRUE))
+                                p05_va = quantile(mean_va, probs = 0.05, na.rm = TRUE),
+                                p0_va = quantile(mean_va, probs = 0, na.rm = TRUE))
 
     usgs_statsmv  <-  usgs_statsmv %>%
                       arrange(desc(year_nu)) %>%
                       rename(month = "month_nu", mean_value = "mean_va") %>%
                       left_join(summary_stats, by = c("month", "Station", 'parameter_cd')) %>%
-                      dplyr::mutate(date = lubridate::ym(paste(as.character(year_nu),'-', as.character(month))))
+                      dplyr::mutate(date = lubridate::ym(paste(as.character(year_nu),'-', as.character(month))))%>%
+                      dplyr::mutate(
+                        StatisticsStatusDescription = dplyr::case_when(
+                          mean_value <= p0_va  ~'All-time low for this month',
+                          mean_value <= p10_va & mean_value > p0_va ~"Much below normal",
+                          mean_value > p10_va & mean_value <= p25_va ~ "Below normal",
+                          mean_value > p25_va & mean_value <= p75_va ~"Normal",
+                          mean_value > p75_va & mean_value <= p90_va~"Above normal",
+                          mean_value > p90_va & mean_value < p100_va ~ "Much above normal",
+                          mean_value >= p100_va ~ 'All-time high for this month',
+                          TRUE~"Not ranked"
+                        ),
+                        StatisticsStatusDescription = factor(StatisticsStatusDescription,
+                                                             levels = c("Not ranked",
+                                                                        "All-time low for this month",
+                                                                        "Much below normal",
+                                                                        "Below normal",
+                                                                        "Normal",
+                                                                        "Above normal",
+                                                                        "Much above normal",
+                                                                        "All-time high for this month")))
 
 
 }
@@ -1542,7 +1596,8 @@ ww_reportUSGSav <- function(procDV,
 
   summary_stats <- usgs_statsav %>%
     group_by(Station, parameter_cd) %>%
-    summarize(p95_va = quantile(mean_va, probs = .95, na.rm = TRUE),
+    summarize(p100_va = quantile(mean_va, probs = 1, na.rm = TRUE),
+              p95_va = quantile(mean_va, probs = .95, na.rm = TRUE),
               p90_va = quantile(mean_va, probs = .90, na.rm = TRUE),
               p80_va = quantile(mean_va, probs = .80, na.rm = TRUE),
               p75_va = quantile(mean_va, probs = .75, na.rm = TRUE),
@@ -1550,7 +1605,8 @@ ww_reportUSGSav <- function(procDV,
               p25_va = quantile(mean_va, probs = .25, na.rm = TRUE),
               p20_va = quantile(mean_va, probs = .20, na.rm = TRUE),
               p10_va = quantile(mean_va, probs = 0.1, na.rm = TRUE),
-              p05_va = quantile(mean_va, probs = 0.05, na.rm = TRUE))
+              p05_va = quantile(mean_va, probs = 0.05, na.rm = TRUE),
+              p0_va = quantile(mean_va, probs = 0, na.rm = TRUE))
 
   usgs_statsav  <-  usgs_statsav %>%
     arrange(desc(year_nu)) %>%

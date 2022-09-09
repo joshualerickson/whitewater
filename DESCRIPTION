@@ -34,12 +34,14 @@ Suggests:
     covr,
     rmarkdown,
     knitr,
+    ggfx,
     future,
     broom,
     patchwork,
     jsonlite,
     Kendall,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    geomtextpath
 Config/testthat/edition: 3
 Depends: 
     R (>= 3.4.0)

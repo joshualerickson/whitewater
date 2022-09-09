@@ -308,3 +308,13 @@ test_that("usgs peaks", {
 
   expect_equal(yaak_peak[1,]$wy, 1948)
 })
+
+
+test_that('current conditions', {
+
+  curcond <- ww_current_conditions()
+
+  expect_gt(nrow(curcond), 0)
+})
+
+
