@@ -135,7 +135,9 @@ ww_dvUSGS <- function(sites,
   attr(usgs_raw_dv, 'parameter_cd_names') <- cols_to_update(usgs_raw_dv)
 
 
-  usgs_raw_dv
+  usgs_raw_dv %>%
+    dplyr::relocate(Station, site_no, drainage_area,
+                    lat, long, altitude,dplyr::everything())
 
 }
 
@@ -506,7 +508,9 @@ if(isTRUE(verbose)){
 
   }
 }
-  final_data
+  final_data %>%
+    dplyr::relocate(Station, site_no, drainage_area,
+                    lat, long, altitude,dplyr::everything())
 
 }
 
@@ -592,7 +596,9 @@ if(isTRUE(verbose)){
 }
   }
 
-  final_data
+  final_data %>%
+    dplyr::relocate(Station, site_no, drainage_area,
+                    lat, long, altitude,dplyr::everything())
 }
 
 
@@ -763,12 +769,13 @@ ww_floorIVUSGS <- function(procDV,
     group_by(Station, site_no,param_type, date) %>%
     dplyr::summarise(across(dplyr::any_of(cols),
                             ~mean(.x, na.rm = TRUE))) %>%
-    ungroup())
+    ungroup()) %>%
+    dplyr::mutate_all(~ifelse(is.nan(.), NA_real_, .))
 
-  usgs_download_hourly <- usgs_download_hourly %>%
-    tidyr::pivot_wider(names_from = param_type, values_from = dplyr::any_of(cols)) %>%
-    dplyr::select_if(all_na) %>%
-    dplyr::rename_with(~name_params_to_update(.x), dplyr::contains('param'))
+  # usgs_download_hourly <- usgs_download_hourly %>%
+  #   tidyr::pivot_wider(names_from = param_type, values_from = dplyr::any_of(cols)) %>%
+  #   dplyr::select_if(all_na) %>%
+  #   dplyr::rename_with(~name_params_to_update(.x), dplyr::contains('param'))
 
   usgs_download_hourly <- usgs_download_hourly %>% dplyr::filter(!is.na(date))
 
@@ -938,12 +945,14 @@ ww_instantaneousUSGS <- function(procDV,
     mutate(across(dplyr::any_of(cols), readr::parse_number)) %>%
     select(Station, site_no,param_type, date, dplyr::any_of(cols), dplyr::ends_with("_error")))
 
-  usgs_download_inst <- usgs_download_inst %>%
-    tidyr::pivot_wider(names_from = param_type, values_from = dplyr::any_of(cols)) %>%
-    dplyr::select_if(all_na) %>%
-    dplyr::rename_with(~name_params_to_update(.x), dplyr::contains('param'))
+  # usgs_download_inst <- usgs_download_inst %>%
+  #   tidyr::pivot_wider(names_from = param_type, values_from = dplyr::any_of(cols)) %>%
+  #   dplyr::select_if(all_na) %>%
+  #   dplyr::rename_with(~name_params_to_update(.x), dplyr::contains('param'))
 
-  usgs_download_inst <- usgs_download_inst %>% dplyr::filter(!is.na(date))
+  usgs_download_inst <- usgs_download_inst %>%
+                        dplyr::filter(!is.na(date)) %>%
+                        dplyr::mutate_all(~ifelse(is.nan(.), NA_real_, .))
 }
 #' Prep USGS Instantaneous
 #'
@@ -1121,8 +1130,8 @@ wwfilterNULL(
 }
 
 #' USGS stats
-#' @description This function uses the \link[dataRetrieval]{readNWISstat} to gather daily
-#' statistics like quantiles/percentiles.
+#' @description This function uses the \link[dataRetrieval]{readNWISstat} to gather daily, monthly or yearly
+#' percentiles.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{character} USGS NWIS site.
 #' @param temporalFilter A \code{character} for the stat summary window, e.g. 'daily' (default), 'monthly', 'yearly'.
@@ -1251,7 +1260,33 @@ ww_reportUSGSdv <- function(procDV,
                                        days = days,
                                        parallel = parallel)
 
-  final_data
+    final_data %>%
+    group_by(site_no,parameter_cd) %>%
+    dplyr::mutate(dplyr::across(site_station_days$cols$cols,
+    ~dplyr::case_when(
+      .x <= min_va  ~'All-time low for this day',
+      .x <= p10_va & .x > min_va ~"Much below normal",
+      .x > p10_va & .x <= p25_va ~ "Below normal",
+      .x > p25_va & .x <= p75_va ~"Normal",
+      .x > p75_va & .x <= p90_va~"Above normal",
+      .x > p90_va & .x < max_va ~ "Much above normal",
+      .x >= max_va ~ 'All-time high for this day',
+      is.na(.x) ~ NA_character_,
+      TRUE~"Not ranked"
+    ), .names = "{.col}_StatisticsStatusDescription")) %>%
+    mutate(across(contains("_StatisticsStatusDescription"),
+    ~factor(.x,
+                                         levels = c("Not ranked",
+                                                    "All-time low for this day",
+                                                    "Much below normal",
+                                                    "Below normal",
+                                                    "Normal",
+                                                    "Above normal",
+                                                    "Much above normal",
+                                                    "All-time high for this day")))) %>%
+    ungroup() %>%
+    dplyr::relocate(Station, site_no, drainage_area,
+                    lat, long, altitude,dplyr::everything())
 
 }
 
@@ -1272,23 +1307,32 @@ usgs_stats_fun <- function(data, type, verbose) {
                     parameterCd = data$params[[1]],
                     statType = 'all',
                     statReportType = 'daily')) %>%
-                    mutate(Station = readNWISsite(data$sites) %>%
-                    select(station_nm) %>%
-                    as.character()),
+                    mutate(
+                    drainage_area = readNWISsite(site_no) %>% select(drain_area_va) %>% as.numeric(),
+                    Station = readNWISsite(site_no) %>% select(station_nm) %>% as.character(),
+                    lat = readNWISsite(site_no) %>% select(dec_lat_va) %>% as.numeric(),
+                    long = readNWISsite(site_no) %>% select(dec_long_va) %>% as.numeric(),
+                    altitude = readNWISsite(site_no) %>% select(alt_va) %>% as.numeric()),
           'monthly' = suppressMessages(dataRetrieval::readNWISstat(data$sites,
                     parameterCd = data$params[[1]],
                     statType = 'all',
                     statReportType = 'monthly')) %>%
-                    mutate(Station = readNWISsite(data$sites) %>%
-                    select(station_nm) %>%
-                    as.character()),
+                    mutate(
+                      drainage_area = readNWISsite(site_no) %>% select(drain_area_va) %>% as.numeric(),
+                      Station = readNWISsite(site_no) %>% select(station_nm) %>% as.character(),
+                      lat = readNWISsite(site_no) %>% select(dec_lat_va) %>% as.numeric(),
+                      long = readNWISsite(site_no) %>% select(dec_long_va) %>% as.numeric(),
+                      altitude = readNWISsite(site_no) %>% select(alt_va) %>% as.numeric()),
           'yearly' = suppressMessages(dataRetrieval::readNWISstat(data$sites,
                     parameterCd = data$params[[1]],
                     statType = 'all',
                     statReportType = 'annual')) %>%
-                    mutate(Station = readNWISsite(data$sites) %>%
-                    select(station_nm) %>%
-                    as.character()))
+                    mutate(
+                      drainage_area = readNWISsite(site_no) %>% select(drain_area_va) %>% as.numeric(),
+                      Station = readNWISsite(site_no) %>% select(station_nm) %>% as.character(),
+                      lat = readNWISsite(site_no) %>% select(dec_lat_va) %>% as.numeric(),
+                      long = readNWISsite(site_no) %>% select(dec_long_va) %>% as.numeric(),
+                      altitude = readNWISsite(site_no) %>% select(alt_va) %>% as.numeric()))
 if(isTRUE(verbose)){
   if(nrow(final_data) < 1){
 
@@ -1331,14 +1375,19 @@ clean_hourly_dv_report <- function(pp, data, days, ...) {
                        options = wwOptions(period = days),
                        ...))
 
+
   u_hour <- u_hour %>%
     mutate(Date = lubridate::as_date(date),
            year = year(Date),
            month = month(Date),
            day = day(Date),
            month_day = str_c(month, day, sep = "-")) %>%
-    group_by(Station, month_day, Date) %>%
-    summarise(across(dplyr::any_of(cols), ~mean(.x, na.rm = TRUE)))
+    group_by(Station, param_type, month_day, Date) %>%
+    summarise(across(dplyr::any_of(cols), ~mean(.x, na.rm = TRUE)), .groups = 'drop') %>%
+    dplyr::rename(parameter_cd = 'param_type') %>%
+    dplyr::mutate(parameter_cd = stringr::str_remove_all(parameter_cd, "param_"))
+
+  u_hour <- u_hour %>% dplyr::mutate_all(~ifelse(is.nan(.), NA_real_, .))
 
   usgs_statsdv <- data %>%
     mutate(month_day = str_c(month_nu, day_nu, sep = "-"))
@@ -1355,7 +1404,7 @@ clean_hourly_dv_report <- function(pp, data, days, ...) {
 
   u_hour <- u_hour %>% filter(month_day %in% t)
 
-  usgs_statsdv <- usgs_statsdv %>% left_join(u_hour, by = c("Station", "month_day"))
+  usgs_statsdv <- usgs_statsdv %>% left_join(u_hour, by = c("Station", "parameter_cd", "month_day"))
 }
 
 #' Get Current Conditions
@@ -1516,7 +1565,8 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
                       arrange(desc(year_nu)) %>%
                       rename(month = "month_nu", mean_value = "mean_va") %>%
                       left_join(summary_stats, by = c("month", "Station", 'parameter_cd')) %>%
-                      dplyr::mutate(date = lubridate::ym(paste(as.character(year_nu),'-', as.character(month))))%>%
+                      dplyr::mutate(date = lubridate::ym(paste(as.character(year_nu),'-', as.character(month)))) %>%
+                      group_by(site_no,parameter_cd) %>%
                       dplyr::mutate(
                         StatisticsStatusDescription = dplyr::case_when(
                           mean_value <= p0_va  ~'All-time low for this month',
@@ -1536,7 +1586,10 @@ if(missing(procDV) & is.null(sites))stop("Need at least one argument")
                                                                         "Normal",
                                                                         "Above normal",
                                                                         "Much above normal",
-                                                                        "All-time high for this month")))
+                                                                        "All-time high for this month"))) %>%
+      ungroup() %>%
+      dplyr::relocate(Station, site_no, drainage_area,
+                      lat, long, altitude,dplyr::everything())
 
 
 }
@@ -1612,7 +1665,31 @@ ww_reportUSGSav <- function(procDV,
     arrange(desc(year_nu)) %>%
     rename(year = "year_nu", mean_value = "mean_va") %>%
     left_join(summary_stats, by = c("Station", 'parameter_cd')) %>%
-    arrange(Station)
+    arrange(Station) %>%
+    group_by(site_no, parameter_cd) %>%
+    dplyr::mutate(
+      StatisticsStatusDescription = dplyr::case_when(
+        mean_value <= p0_va  ~'All-time low for this month',
+        mean_value <= p10_va & mean_value > p0_va ~"Much below normal",
+        mean_value > p10_va & mean_value <= p25_va ~ "Below normal",
+        mean_value > p25_va & mean_value <= p75_va ~"Normal",
+        mean_value > p75_va & mean_value <= p90_va~"Above normal",
+        mean_value > p90_va & mean_value < p100_va ~ "Much above normal",
+        mean_value >= p100_va ~ 'All-time high for this month',
+        TRUE~"Not ranked"
+      ),
+      StatisticsStatusDescription = factor(StatisticsStatusDescription,
+                                           levels = c("Not ranked",
+                                                      "All-time low for this year",
+                                                      "Much below normal",
+                                                      "Below normal",
+                                                      "Normal",
+                                                      "Above normal",
+                                                      "Much above normal",
+                                                      "All-time high for this year"))) %>%
+    ungroup() %>%
+    dplyr::relocate(Station, site_no, drainage_area,
+                    lat, long, altitude,dplyr::everything())
 
 
 }
@@ -1784,102 +1861,4 @@ usgs_min_max_wy <-  data %>%
                     dplyr::select(Station, site_no, wy, peak_va, peak_dt, dplyr::everything())
 }
 
-#' Get param colnames
-#'
-#' @param data data.frame
-#'
-#' @return A vector with parameter names in the data.frame
-#' @noRd
-#'
-cols_to_update <- function(data){
 
-  param_names <- c("Wtemp","Precip","Flow","GH","SpecCond",
-                   "DO", "pH", "GWL","Turb","WLBLS", "Chloride")
-
-  names(data[which(names(data) %in% param_names)])
-}
-
-#' Get paramCd names
-#'
-#' @param x vector of parameter_cd
-#' @return A vector of length 1 or n, matching the length of the logical input or output vectors.
-#' @noRd
-#'
-name_params_to_update <- function(x){
-
-
-  param_names <- dplyr::case_when(
-                   x == "00010" ~ "Wtemp",
-                   x == "00045" ~ "Precip",
-                   x == "00060" ~ "Flow",
-                   x == "00065" ~ "GH",
-                   x == "00095" ~ "SpecCond",
-                   x == "00300" ~ "DO",
-                   x == "00400" ~ "pH",
-                   x == "62611" ~ "GWL",
-                   x == "63680" ~ "Turb",
-                   x == "72019" ~ "WLBLS",
-                   x == "70290" ~ "Chloride",
-                   x == "param_00010" ~ "Wtemp",
-                   x == "param_00045" ~ "Precip",
-                   x == "param_00060" ~ "Flow",
-                   x == "param_00065" ~ "GH",
-                   x == "param_00095" ~ "SpecCond",
-                   x == "param_00300" ~ "DO",
-                   x == "param_00400" ~ "pH",
-                   x == "param_62611" ~ "GWL",
-                   x == "param_63680" ~ "Turb",
-                   x == "param_72019" ~ "WLBLS",
-                   x == "param_70290" ~ "Chloride",
-                   x == "Wtemp_param_00010" ~ "Wtemp",
-                   x == "Precip_param_00045" ~ "Precip",
-                   x == "Flow_param_00060" ~ "Flow",
-                   x == "GH_param_00065" ~ "GH",
-                   x == "SpecCond_param_00095" ~ "SpecCond",
-                   x == "DO_param_00300" ~ "DO",
-                   x == "pH_param_00400" ~ "pH",
-                   x == "GWL_param_62611" ~ "GWL",
-                   x == "Turb_param_63680" ~ "Turb",
-                   x == "WLBLS_param_72019" ~ "WLBLS",
-                   x == "Chloride_param_70290" ~ "Chloride")
-
-}
-
-#' @title Filter Null List
-#' @description Taken from leaflet filterNULL function
-#' remove NULL elements from a list
-#' @param x A list whose NULL elements will be filtered
-#' @return A list that has NULL elements removed
-#' @noRd
-wwfilterNULL <- function(x) {
-  if (length(x) == 0 || !is.list(x)) return(x)
-  x[!unlist(lapply(x, is.null))]
-}
-
-
-
-#' @title Get error codes
-#' @description Used for instantneous API call where sometimes an error occurrs. We just
-#' want to capture the description.
-#' @param x A character
-#' @return A vector of length 1 or n, matching the length of the logical input or output vectors.
-#' @noRd
-iv_error_codes <- function(x){
-
-  dplyr::case_when(x == "Bkw" ~	'Value is affected by backwater at the measurement site.',
-                   x == 'Dis' ~	'Record has been discontinued at the measurement site.',
-                   x == 'Dry' ~	'Dry condition exists at the measurement site.',
-                   x == 'Eqp' ~	'Value affected by equipment malfunction.',
-                   x == 'Fld' ~	'Value is affected by flooding conditions at the measurement site.',
-                   x == 'Ice' ~	'Value is affected by ice at the measurement site.',
-                   x == 'Mnt' ~	'Site under going maintenance.',
-                   x == 'Pr' ~	'Parameter only partially monitored over specific range of values or time periods.',
-                   x == 'Pmp' ~	'Value is affected by pumping at time of measurement.',
-                   x == 'Rat' ~	'Rating being developed.',
-                   x == 'Ssn' ~	'Parameter monitored seasonally.',
-                   x == 'Tst' ~	'Value is affected by artificial test condition.',
-                   x == 'Zfl' ~	'Zero flow condition present at the measurement site.',
-                   x == '***' ~	'Value unavailable.',
-                   TRUE ~ NA_character_)
-
-}

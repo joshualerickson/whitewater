@@ -33,8 +33,8 @@ ww_statsUSGS(
 \item{...}{arguments to pass on to \link[furrr]{future_map}.}
 }
 \description{
-This function uses the \link[dataRetrieval]{readNWISstat} to gather daily
-statistics like quantiles/percentiles.
+This function uses the \link[dataRetrieval]{readNWISstat} to gather daily, monthly or yearly
+percentiles.
 }
 \note{
 Be aware, the parameter values ('Flow', 'Wtemp', etc) are calculated from the \link[whitewater]{ww_floorIVUSGS}

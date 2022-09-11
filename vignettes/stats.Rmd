@@ -184,23 +184,23 @@ geom_sf(color = '#FF0000', aes(color = StatisticsStatusDescription,
 p2
 ```
 
-### monthly and annual   
+### monthly and yearly   
 
 Now we can looked into the other temporal windows like `monthly` and `annual`. These work the same as daily but now we just need to change the argument.  
 
 ```{r}
 
-monthly_stats <- ww_statsUSGS(yaak_dv, temporalFilter = 'monthly')
+yaak_monthly_stats <- ww_statsUSGS(yaak_dv, temporalFilter = 'monthly')
 
-monthly_stats %>% 
+yaak_monthly_stats %>% 
   filter(month == 8) %>% 
   mutate(diff = mean_value-p50_va,
          Status = if_else(diff > 0, "Above normal", "Below normal")) %>% 
   ggplot(aes(year_nu, diff, fill = Status)) + 
-  with_outer_glow(geom_col(), sigma = 1) +
+  with_outer_glow(geom_col(), sigma = 20) +
   scale_fill_manual(values = c("#009900","#996600")) +
   labs(y = 'Discharge (cfs)', x = 'Year', color = '', title = 'Comparing monthly mean flow in August to 50% percentile') + 
-  theme_bw()
+  theme_dark()
 ```
 
 
@@ -211,30 +211,92 @@ This looks interesting! What about the sites that have all-time low for today? W
 atl_sites_monthly <- ww_statsUSGS(sites = unique(current_condition$SiteNumber),
                              parameter_cd = '00060', 
                              temporalFilter = 'monthly',
-                             days = 30,
                              parallel = TRUE,
                              verbose = FALSE)
 ```
 
+We can then look at a few of the sites in a heatmap. 
 
 ```{r, echo = F, warning=F, message=F, error=F}
+
+monthly_stats <- atl_sites_monthly %>% add_count(site_no,year_nu) %>% filter(n == 12)
+
 atl_sites_monthly %>% 
-  filter(month == 8) %>% 
-  group_by(site_no) %>% 
+  group_by(site_no) %>%   
+  add_count() %>% 
+  filter(n > 950) %>% 
   nest() %>% 
-  .[1:50,] %>%  
+  .[1:4,] %>% 
   unnest() %>% 
   ungroup() %>% 
-  mutate(diff = mean_value-p50_va,
-         Status = if_else(diff > 0, "Above normal", "Below normal")) %>% 
-  filter(Status == "Below normal") %>% 
-  ggplot(aes(year_nu, diff, fill = Status)) + 
-  geom_col() +
-  scale_fill_manual(values = c("#009900","#996600")) +
-  labs(y = 'Discharge (cfs)', x = 'Year', color = '', title = 'Comparing monthly mean flow in August to 50% percentile') + 
-  theme_void() +
-  facet_wrap(~site_no, scales = 'free') +
-  theme(
+  ggplot() + 
+  with_inner_glow(geom_tile(aes(month, year_nu, fill = StatisticsStatusDescription))) +
+  scale_x_continuous(breaks = scales::pretty_breaks()) + 
+  scale_fill_manual('Streamflow: status',
+                    values = c(
+                      "All-time low for this month" = "#FF0000",
+                      "Much below normal" = "#BB2222",
+                      "Below normal" = "#FFAA00",
+                      "Normal" = "#00ff00",
+                      "Above normal" = "#44dddd",
+                      "Much above normal" = "#00ffff",
+                      "All-time high for this month" = "#000055")) + 
+  labs(title = "Heatmap of Monthly Mean Streamflow", x = 'Month', y = 'Year')+
+  facet_wrap(~Station, scales = 'free')+
+  theme(text=element_text(size=10,  family="Comic Sans MS"),
+        strip.text = element_text(size = 5),
+        axis.title.x = element_text(),
+        axis.title.y = element_text(angle = 90,margin = unit(c(0, 3, 0, 0), 'mm')),
+        plot.subtitle = element_text(margin = unit(c(0, 0, 3, 0), 'mm')),
+        plot.title = element_text(margin = unit(c(0, 0, 3, 0), 'mm')))
+```
+
+**Or, back to the Yaak, MT station.**  
+
+```{r, echo = F, warning=F, message=F, error=F}
+yaak_monthly_stats %>% 
+ggplot() + 
+  with_inner_glow(geom_tile(aes(month, year_nu, fill = StatisticsStatusDescription))) +
+  scale_x_continuous(breaks = scales::pretty_breaks()) + 
+  scale_fill_manual('Streamflow: status',
+                    values = c(
+                      "All-time low for this month" = "#FF0000",
+                      "Much below normal" = "#BB2222",
+                      "Below normal" = "#FFAA00",
+                      "Normal" = "#00ff00",
+                      "Above normal" = "#44dddd",
+                      "Much above normal" = "#00ffff",
+                      "All-time high for this month" = "#000055")) + 
+  labs(title = "Heatmap of Monthly Mean Streamflow", x = 'Month', y = 'Year')+
+  facet_wrap(~Station, scales = 'free')+
+  theme(text=element_text(size=10,  family="Comic Sans MS"),
+        strip.text = element_text(size = 5),
+        axis.title.x = element_text(),
+        axis.title.y = element_text(angle = 90,margin = unit(c(0, 3, 0, 0), 'mm')),
+        plot.subtitle = element_text(margin = unit(c(0, 0, 3, 0), 'mm')),
+        plot.title = element_text(margin = unit(c(0, 0, 3, 0), 'mm')))
+```
+
+Same as monthly we can do this for `yearly`.  
+
+```{r}
+
+yaak_yearly_stats <- ww_statsUSGS(yaak_dv, temporalFilter = 'yearly')
+```
+
+
+Now we can look at the mean value for the year against the 25th and 75th percentiles.  
+
+```{r, echo = F, warning=F, message=F, error=F}
+yaak_yearly_stats %>% 
+ggplot(aes(year)) + 
+  with_outer_glow(geom_line(aes(y = mean_value), color = 'black', show.legend = F),sigma = 2, expand = .1) +
+  with_outer_glow(geom_ribbon(aes(ymin = p25_va, ymax = p75_va), fill = 'grey75', alpha = 0.2), sigma = 10) + 
+  labs(y = 'Discharge (cfs)',
+       color = '',
+       title = 'Comparing yearly mean flow to 25th and 75th percentiles') +
+  facet_wrap(~Station, scales = 'free') +
+  theme(text=element_text(size=10,  family="Comic Sans MS"),
         strip.text = element_blank(),
         axis.title.x = element_text(),
         axis.title.y = element_text(angle = 90,margin = unit(c(0, 3, 0, 0), 'mm')),
@@ -242,3 +304,6 @@ atl_sites_monthly %>%
         plot.title = element_text(margin = unit(c(0, 0, 3, 0), 'mm')))
 ```
 
+### Wrap-up  
+
+Hopefully this gives you an idea of how to use whitewater with the `ww_statsUSGS()` function? If you have any questions or issues please submit a issue on [github](https://github.com/joshualerickson/whitewater/issues). Thanks!  
