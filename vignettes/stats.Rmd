@@ -28,15 +28,14 @@ library(tidyr)
 library(sf)
 library(future)
 library(ggfx)
-library(geomtextpath)
 ```
 
 
 ## Intro  
 
-Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows (figure below). The `ww_statsUSGS()` function does this for you! It takes the historical values for your parameter (flow in this example) and returns percentiles for site site but also combines the current values and current conditions if using parameter code '00060' from the [USGS dashboard](https://dashboard.waterdata.usgs.gov/app/nwd/?aoi=default). In this vignette we'll go over the different options/arguments in the `ww_statsUSGS()`.    
+Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows (figure below). The `ww_statsUSGS()` function does this for you! It takes the historical values for your parameter (flow in this example) using the  USGS Statistics Web Service beta and returns percentiles for each site but also combines current, monthly or yearly values and conditions depending on your choice of `temporalFilter`. Using the web service is really helpful because it quality controls the incoming data, i.e. data that is incomplete or not qc'd will not be returned. In this vignette we'll go over the different options/arguments in the `ww_statsUSGS()` as well as some ways to visualize the results.    
 
-```{r}
+```{r, echo=F}
 
 yaak_dv <- ww_dvUSGS(sites = '12304500', parameter_cd = '00060')
 
@@ -45,7 +44,7 @@ yaak_daily_report <- yaak_dv %>% ww_statsUSGS(temporalFilter = 'daily',
 yaak_daily_report %>% 
   pivot_longer(c('Flow', 'p25_va', 'p75_va', 'max_va', 'min_va')) %>% 
   ggplot() + 
-  with_outer_glow(geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))), sigma = .5) + 
+  with_outer_glow(geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))), sigma = .1) + 
   scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
   scale_alpha_manual(values = c(1,.5), guide = 'none') +
   labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to Max, Min, 25th and 75th percentiles') + 
@@ -56,7 +55,7 @@ yaak_daily_report %>%
 ## ww_statsUSGS()  
 
 The `ww_statsUSGS()` is essentially a wrapper around `dataRetrieval::readNWISstat()` but in addition will take the parameter values ('Flow', 'Wtemp', etc) calculated from the `ww_floorIVUSGS()`
-function and add to the data as well. Thus, the instantaneous values will look different than the daily mean values, as it should. Just like dataRetrieval, there are three different flavors of temporal windows that we can choose from: daily, monthly and yearly.  
+function and add to the data as well. Thus, the instantaneous values will look different than the daily mean values, as it should. Just like dataRetrieval, there are three different flavors of temporal windows that we can choose from: daily, monthly and yearly.   
 
 ### daily  
 
@@ -72,7 +71,7 @@ yaak_daily_report_30
 yaak_daily_report_30 %>% 
   pivot_longer(c('Flow', 'p25_va', 'p75_va', 'max_va', 'min_va')) %>% 
   ggplot() + 
-  with_outer_glow(geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va')))) + 
+  with_outer_glow(geom_line(aes(Date, value, color = name, alpha = name %in% c('p25_va', 'p75_va', 'max_va', 'min_va'))), sigma = .1) + 
   scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
   scale_alpha_manual(values = c(1,.5), guide = 'none') +
   labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to Max, Min, 25th and 75th percentiles') + 
@@ -98,7 +97,7 @@ multiple_sites %>%
   mutate(name = factor(name, levels = c('Current Flow', 'Max', 'Min', '25%', '75%'))) %>% 
   ggplot() +
   labs(y = 'Discharge (cfs)', color = '', title = 'Comparing current flow to Max, Min, 25th and 75th percentiles') + 
-  with_outer_glow(geomtextpath::geom_textpath(aes(Date, value, color = name, label = name, alpha = name %in% c('Current Flow','25%', '75%', 'Max', 'Min')),text_smoothing = 30,hjust = 1, show.legend = F), sigma = .5)+ 
+  with_outer_glow(geom_line(aes(Date, value, color = name, label = name, alpha = name %in% c('Current Flow','25%', '75%', 'Max', 'Min')),text_smoothing = 30,hjust = 1, show.legend = F), sigma = .5)+ 
   scale_color_manual(values = c('black', 'blue', 'red', 'yellow', 'forestgreen')) +
   scale_alpha_manual(values = c(1,.5), guide = 'none')  + 
   facet_wrap(~Station, scales = 'free')
@@ -109,7 +108,7 @@ What's nice about this is you can run in parallel using the argument `parallel =
 
 ```{r, warning=F, message=F, error=F}
 
-current_condition <- ww_current_conditions() %>% filter(StatisticsStatusDescription %in% c('All-time low for this day'))
+current_condition <- ww_current_conditions() %>% filter(StatisticsStatusDescription %in% c('All-time low for this day'),!TimeZoneCode %in% c('AKDT', 'AST','HST', 'GST'))  
 
 plan(multisession(workers = 10))
 
@@ -124,8 +123,7 @@ atl_sites <- ww_statsUSGS(sites = unique(current_condition$SiteNumber),
 
 ```{r, echo=F, warning=F, message=F, error=F}
 
-ranking_flow <- atl_sites %>% left_join(current_condition  %>% 
-                                          filter(!TimeZoneCode %in% c('AKDT', 'AST','HST')) %>% 
+ranking_flow <- atl_sites %>% left_join(current_condition  %>% filter(!TimeZoneCode %in% c('AKDT', 'AST','HST', 'GST')) %>% 
                                              select(site_no = "SiteNumber",
                                                     StatisticsStatusDescription,
                                                     StatisticStatusCode,
@@ -186,7 +184,7 @@ p2
 
 ### monthly and yearly   
 
-Now we can looked into the other temporal windows like `monthly` and `annual`. These work the same as daily but now we just need to change the argument.  
+Now we can looked into the other temporal windows like `monthly` and `yearly`. These work the same as daily but now we just need to change the argument.  
 
 ```{r}
 
@@ -215,7 +213,7 @@ atl_sites_monthly <- ww_statsUSGS(sites = unique(current_condition$SiteNumber),
                              verbose = FALSE)
 ```
 
-We can then look at a few of the sites in a heatmap. 
+We can then look at a few of the sites in a heatmap style graph. 
 
 ```{r, echo = F, warning=F, message=F, error=F}
 
@@ -243,7 +241,7 @@ atl_sites_monthly %>%
                       "All-time high for this month" = "#000055")) + 
   labs(title = "Heatmap of Monthly Mean Streamflow", x = 'Month', y = 'Year')+
   facet_wrap(~Station, scales = 'free')+
-  theme(text=element_text(size=10,  family="Comic Sans MS"),
+  theme(text=element_text(size=10),
         strip.text = element_text(size = 5),
         axis.title.x = element_text(),
         axis.title.y = element_text(angle = 90,margin = unit(c(0, 3, 0, 0), 'mm')),
@@ -256,25 +254,30 @@ atl_sites_monthly %>%
 ```{r, echo = F, warning=F, message=F, error=F}
 yaak_monthly_stats %>% 
 ggplot() + 
-  with_inner_glow(geom_tile(aes(month, year_nu, fill = StatisticsStatusDescription))) +
-  scale_x_continuous(breaks = scales::pretty_breaks()) + 
+  with_inner_glow(geom_tile(aes(month, year_nu,
+                                fill = StatisticsStatusDescription,
+                               color = StatisticsStatusDescription),
+                            show.legend = T)) +
+  scale_color_manual('Streamflow: status',
+                     values = c(
+                                "All-time low for this year" = "#990000",
+                                "Much below normal" = "#661111",
+                                "Below normal" = "#996600",
+                                "Normal" = "#009900",
+                                "Above normal" = "#11aaaa",
+                                "Much above normal" = "#000099",
+                                "All-time high for this year" = "#000000"))+ 
   scale_fill_manual('Streamflow: status',
                     values = c(
-                      "All-time low for this month" = "#FF0000",
+                      "All-time low for this year" = "#FF0000",
                       "Much below normal" = "#BB2222",
                       "Below normal" = "#FFAA00",
                       "Normal" = "#00ff00",
                       "Above normal" = "#44dddd",
-                      "Much above normal" = "#00ffff",
-                      "All-time high for this month" = "#000055")) + 
+                      "Much above normal" = "#0000FF",
+                      "All-time high for this year" = "#000055"))+ 
   labs(title = "Heatmap of Monthly Mean Streamflow", x = 'Month', y = 'Year')+
-  facet_wrap(~Station, scales = 'free')+
-  theme(text=element_text(size=10,  family="Comic Sans MS"),
-        strip.text = element_text(size = 5),
-        axis.title.x = element_text(),
-        axis.title.y = element_text(angle = 90,margin = unit(c(0, 3, 0, 0), 'mm')),
-        plot.subtitle = element_text(margin = unit(c(0, 0, 3, 0), 'mm')),
-        plot.title = element_text(margin = unit(c(0, 0, 3, 0), 'mm')))
+  facet_wrap(~Station, scales = 'free')
 ```
 
 Same as monthly we can do this for `yearly`.  
@@ -288,20 +291,56 @@ yaak_yearly_stats <- ww_statsUSGS(yaak_dv, temporalFilter = 'yearly')
 Now we can look at the mean value for the year against the 25th and 75th percentiles.  
 
 ```{r, echo = F, warning=F, message=F, error=F}
+
 yaak_yearly_stats %>% 
-ggplot(aes(year)) + 
-  with_outer_glow(geom_line(aes(y = mean_value), color = 'black', show.legend = F),sigma = 2, expand = .1) +
-  with_outer_glow(geom_ribbon(aes(ymin = p25_va, ymax = p75_va), fill = 'grey75', alpha = 0.2), sigma = 10) + 
+ggplot(aes(year)) +
+  with_outer_glow(geom_ribbon(aes(ymin = p25_va, ymax = p75_va), fill = '#00ff00', alpha = 0.5), sigma = 10)+
+  with_outer_glow(geom_line(aes(y = mean_value), color = 'black', show.legend = F),sigma = 2, expand = .1)+
   labs(y = 'Discharge (cfs)',
        color = '',
        title = 'Comparing yearly mean flow to 25th and 75th percentiles') +
   facet_wrap(~Station, scales = 'free') +
-  theme(text=element_text(size=10,  family="Comic Sans MS"),
+  theme(text=element_text(size=10),
         strip.text = element_blank(),
         axis.title.x = element_text(),
         axis.title.y = element_text(angle = 90,margin = unit(c(0, 3, 0, 0), 'mm')),
         plot.subtitle = element_text(margin = unit(c(0, 0, 3, 0), 'mm')),
         plot.title = element_text(margin = unit(c(0, 0, 3, 0), 'mm')))
+```
+
+Or look at it in a bar graph with fill as the status.
+
+```{r}
+
+p <- yaak_yearly_stats %>% 
+ggplot(aes(year)) +
+  geom_col(aes(year, mean_value, fill = StatisticsStatusDescription,
+                               color = StatisticsStatusDescription), show.legend = T) +
+  scale_color_manual('Streamflow: status',
+                     values = c(
+                                "All-time low for this year" = "#990000",
+                                "Much below normal" = "#661111",
+                                "Below normal" = "#996600",
+                                "Normal" = "#009900",
+                                "Above normal" = "#11aaaa",
+                                "Much above normal" = "#000099",
+                                "All-time high for this year" = "#000000"))+ 
+  scale_fill_manual('Streamflow: status',
+                    values = c(
+                      "All-time low for this year" = "#FF0000",
+                      "Much below normal" = "#BB2222",
+                      "Below normal" = "#FFAA00",
+                      "Normal" = "#00ff00",
+                      "Above normal" = "#44dddd",
+                      "Much above normal" = "#0000FF",
+                      "All-time high for this year" = "#000055"))+
+  labs(y = 'Mean Discharge (cfs)',
+       color = '',
+       x = 'Year',
+       title = paste0('Yearly mean flows for ', yaak_yearly_stats %>% slice(n = 1) %>% pull(Station)))
+
+p
+
 ```
 
 ### Wrap-up  

@@ -118,7 +118,54 @@ provide a <code>sites</code> vector. This will run <a href="ww_dvUSGS.html">ww_d
 
     <div id="ref-examples">
     <h2>Examples</h2>
-    
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshualerickson/whitewater/" class="external-link">whitewater</a></span><span class="op">)</span></span>
+<span class="r-in"><span class="va">yaak_river_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="st">'12304500'</span>,</span>
+<span class="r-in">parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,</span>
+<span class="r-in">wy_month <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="va">yaak_river_iv</span> <span class="op">&lt;-</span> <span class="fu">ww_instantaneousUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co">#change number of days</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="va">yaak_river_iv</span> <span class="op">&lt;-</span> <span class="fu">ww_instantaneousUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
+<span class="r-in">                                options <span class="op">=</span> <span class="fu"><a href="wwOptions.html">wwOptions</a></span><span class="op">(</span>period <span class="op">=</span> <span class="fl">365</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co"># get by date range</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="va">yaak_river_wy</span> <span class="op">&lt;-</span> <span class="fu">ww_instantaneousUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
+<span class="r-in">                                options <span class="op">=</span> <span class="fu"><a href="wwOptions.html">wwOptions</a></span><span class="op">(</span>date_range <span class="op">=</span> <span class="st">'date_range'</span>,</span>
+<span class="r-in">                                                    dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'2022-03-01'</span>, <span class="st">'2022-05-11'</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co"># get most recent</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="va">yaak_river_wy</span> <span class="op">&lt;-</span> <span class="fu">ww_instantaneousUSGS</span><span class="op">(</span><span class="va">yaak_river_dv</span>,</span>
+<span class="r-in">                                options <span class="op">=</span> <span class="fu"><a href="wwOptions.html">wwOptions</a></span><span class="op">(</span>date_range <span class="op">=</span> <span class="st">'recent'</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co">#parallel</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="co">#get sites</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="va">huc17_sites</span> <span class="op">&lt;-</span> <span class="fu">dataRetrieval</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/dataRetrieval/man/whatNWISdata.html" class="external-link">whatNWISdata</a></span><span class="op">(</span>huc <span class="op">=</span> <span class="fl">17</span>,</span>
+<span class="r-in">siteStatus <span class="op">=</span> <span class="st">'active'</span>,</span>
+<span class="r-in">service <span class="op">=</span> <span class="st">'dv'</span>,</span>
+<span class="r-in">parameterCd <span class="op">=</span> <span class="st">'00060'</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
+<span class="r-in"><span class="co">#need to call future::plan()</span></span>
+<span class="r-in"><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span><span class="op">(</span>workers <span class="op">=</span> <span class="fu"><a href="https://future.futureverse.org/reference/re-exports.html" class="external-link">availableCores</a></span><span class="op">(</span><span class="op">)</span><span class="op">-</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="va">pnw_dv</span> <span class="op">&lt;-</span> <span class="fu"><a href="ww_dvUSGS.html">ww_dvUSGS</a></span><span class="op">(</span><span class="va">huc17_sites</span><span class="op">$</span><span class="va">site_no</span>,</span>
+<span class="r-in">parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,</span>
+<span class="r-in">wy_month <span class="op">=</span> <span class="fl">10</span>,</span>
+<span class="r-in">parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span class="r-in"></span>
+<span class="r-in"><span class="va">pnw_iv</span> <span class="op">&lt;-</span> <span class="fu">ww_instantaneousUSGS</span><span class="op">(</span><span class="va">pnw_dv</span>,</span>
+<span class="r-in">                    parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span class="r-in"><span class="op">}</span></span>
+<span class="r-in"></span>
+</code></pre></div>
     </div>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

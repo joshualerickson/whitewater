@@ -180,7 +180,7 @@
 
 <span class="va">pnw_wy</span> <span class="op">&lt;-</span> <span class="va">pnw_wy</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>decade <span class="op">=</span> <span class="fl">10</span><span class="op">+</span><span class="op">(</span><span class="fl">10</span><span class="op">*</span><span class="op">(</span><span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="va">peak_dt</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span>,
                             decade <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">decade</span> <span class="op">==</span> <span class="fl">2020</span>, <span class="fl">2018</span>, <span class="va">decade</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<p>Second, we’ll dive into the dam situation. You’ll need to download a zip file from <a href="https://www.sciencebase.gov/catalog/item/5fb7e483d34eb413d5e14873" class="external-link">here</a>. The name of the zip file we need is <code>DamIndex_PMC.zip</code>. This will download a bunch of csv’s that we’ll bind together so that we can take out any decades with greater than 0.05 DI. This will allow for watersheds that have dams but are almost negligible when it comes to a peak flow analysis.</p>
+<p>Second, we’ll dive into the dam situation. You’ll need to download a zip file from <a href="https://www.sciencebase.gov/catalog/item/5fb7e483d34eb413d5e14873" class="external-link">here</a> from Wieczorek et al. 2021. The name of the zip file we need is <code>DamIndex_PMC.zip</code>. This will download a bunch of csv’s that we’ll bind together so that we can take out any decades with greater than 0.05 DI. The 0.05 threshold was chosen based on the meta data (Wieczorek et al. 2021) where less than 0.05 is described as “Regulation not considered to impact peak flows.” This will allow for watersheds that have dams but are almost negligible when it comes to a peak flow analysis.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
 <span class="va">dam_ts</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://r-spatial.github.io/sf/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span><span class="op">)</span>
@@ -266,6 +266,11 @@
 </h3>
 <p>Hopefully this gives you an idea of how to use whitewater with parallel? If you have any questions or issues please submit a issue on <a href="https://github.com/joshualerickson/whitewater/issues" class="external-link">github</a>. Thanks!</p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<p>Wieczorek, M.E., Wolock, D.M., and McCarthy, P.M., 2021, Dam impact/disturbance metrics for the conterminous United States, 1800 to 2018: U.S. Geological Survey data release, <a href="https://doi.org/10.5066/P92S9ZX6" class="external-link uri">https://doi.org/10.5066/P92S9ZX6</a>.</p>
 </div>
   </div>
 

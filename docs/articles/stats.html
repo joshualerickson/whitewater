@@ -104,12 +104,170 @@
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshualerickson/whitewater/" class="external-link">whitewater</a></span><span class="op">)</span>
 <span class="co">#&gt; <span style="color: #000000;"> Due to potentially crashing (USGS Water Services) REST services keep your parallel processing to </span></span>
 <span class="co"><span style="color: #000000;">#&gt; </span><span style="color: #BB0000; font-weight: bold;"> 10 cores/workers or less </span></span>
-<span class="co"><span style="color: #BB0000; font-weight: bold;">#&gt; </span><span style="color: #000000;"> until further notice. Thank you!</span></span></code></pre></div>
+<span class="co"><span style="color: #BB0000; font-weight: bold;">#&gt; </span><span style="color: #000000;"> until further notice. Thank you!</span></span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt; Attaching package: 'dplyr'</span>
+<span class="co">#&gt; The following objects are masked from 'package:stats':</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt;     filter, lag</span>
+<span class="co">#&gt; The following objects are masked from 'package:base':</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt;     intersect, setdiff, setequal, union</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-spatial.github.io/sf/" class="external-link">sf</a></span><span class="op">)</span>
+<span class="co">#&gt; Linking to GEOS 3.9.1, GDAL 3.2.1, PROJ 7.2.1; sf_use_s2() is TRUE</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span>
+<span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggfx.data-imaginist.com" class="external-link">ggfx</a></span><span class="op">)</span>
+<span class="co">#&gt; Warning: package 'ggfx' was built under R version 4.1.3</span></code></pre></div>
+<div class="section level2">
+<h2 id="intro">Intro<a class="anchor" aria-label="anchor" href="#intro"></a>
+</h2>
+<p>Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows (figure below). The <code><a href="../reference/ww_statsUSGS.html">ww_statsUSGS()</a></code> function does this for you! It takes the historical values for your parameter (flow in this example) using the USGS Statistics Web Service beta and returns percentiles for each site but also combines current, monthly or yearly values and conditions depending on your choice of <code>temporalFilter</code>. Using the web service is really helpful because it quality controls the incoming data, i.e. data that is incomplete or not qc’d will not be returned. In this vignette we’ll go over the different options/arguments in the <code><a href="../reference/ww_statsUSGS.html">ww_statsUSGS()</a></code> as well as some ways to visualize the results.</p>
+<pre><code><span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'daily'</span> was successfully downloaded.</span>
+<span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (daily) was successfully downloaded.</span></code></pre>
+<p><img src="stats_files/figure-html/unnamed-chunk-2-1.png" width="768" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level2">
+<h2 id="ww_statsusgs">ww_statsUSGS()<a class="anchor" aria-label="anchor" href="#ww_statsusgs"></a>
+</h2>
+<p>The <code><a href="../reference/ww_statsUSGS.html">ww_statsUSGS()</a></code> is essentially a wrapper around <code><a href="https://rdrr.io/pkg/dataRetrieval/man/readNWISstat.html" class="external-link">dataRetrieval::readNWISstat()</a></code> but in addition will take the parameter values (‘Flow’, ‘Wtemp’, etc) calculated from the <code><a href="../reference/ww_floorIVUSGS.html">ww_floorIVUSGS()</a></code> function and add to the data as well. Thus, the instantaneous values will look different than the daily mean values, as it should. Just like dataRetrieval, there are three different flavors of temporal windows that we can choose from: daily, monthly and yearly.</p>
+<div class="section level3">
+<h3 id="daily">daily<a class="anchor" aria-label="anchor" href="#daily"></a>
+</h3>
+<p>The <code>temporalFilter</code> argument is used to generate the window of percentiles. Like in the example below we just want to get the last 30 days of daily stats so we’ll put <code>temporalFilter = 'daily'</code> and <code>days = 30</code>. The <code>days</code> arguments is only used for <code>daily</code> but will go back the amount of days you input.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span class="va">yaak_daily_report_30</span> <span class="op">&lt;-</span> <span class="va">yaak_dv</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="../reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span>temporalFilter <span class="op">=</span> <span class="st">'daily'</span>,
+                                  days <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>
+<span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (daily) was successfully downloaded.</span>
+<span class="va">yaak_daily_report_30</span>
+<span class="co">#&gt; <span style="color: #949494;"># A tibble: 31 x 33</span></span>
+<span class="co">#&gt;    Station     site_no drainage_area   lat  long altitude agency_cd parameter_cd</span>
+<span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #BCBCBC;">10</span> Yaak River~ 123045~           792  48.6 -<span style="color: #BB0000;">116.</span>     <span style="text-decoration: underline;">1</span>839 USGS      00060       </span>
+<span class="co">#&gt; <span style="color: #949494;"># ... with 21 more rows, and 25 more variables: ts_id &lt;chr&gt;, loc_web_ds &lt;lgl&gt;,</span></span>
+<span class="co">#&gt; <span style="color: #949494;">#   month_nu &lt;dbl&gt;, day_nu &lt;dbl&gt;, begin_yr &lt;dbl&gt;, end_yr &lt;dbl&gt;, count_nu &lt;dbl&gt;,</span></span>
+<span class="co">#&gt; <span style="color: #949494;">#   max_va_yr &lt;dbl&gt;, max_va &lt;dbl&gt;, min_va_yr &lt;dbl&gt;, min_va &lt;dbl&gt;,</span></span>
+<span class="co">#&gt; <span style="color: #949494;">#   mean_va &lt;dbl&gt;, p05_va &lt;dbl&gt;, p10_va &lt;dbl&gt;, p20_va &lt;dbl&gt;, p25_va &lt;dbl&gt;,</span></span>
+<span class="co">#&gt; <span style="color: #949494;">#   p50_va &lt;dbl&gt;, p75_va &lt;dbl&gt;, p80_va &lt;dbl&gt;, p90_va &lt;dbl&gt;, p95_va &lt;dbl&gt;,</span></span>
+<span class="co">#&gt; <span style="color: #949494;">#   month_day &lt;chr&gt;, Date &lt;date&gt;, Flow &lt;dbl&gt;,</span></span>
+<span class="co">#&gt; <span style="color: #949494;">#   Flow_StatisticsStatusDescription &lt;fct&gt;</span></span></code></pre></div>
+<p><img src="stats_files/figure-html/unnamed-chunk-4-1.png" width="768" style="display: block; margin: auto;"></p>
+<p>If we want to compare multiple sites that fine too! In addition, you don’t have to pipe a <code><a href="../reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> object into the function either. You can just input the sites you want; however, I always recommend using <code><a href="../reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> because you’ll likely come back to the daily values anyway but in the example below we’ll just call with inputting the sites into the <code>sites</code> argument. If you’re going to use the <code>sites</code> argument you’ll also need to specify the <code>parameter_cd</code>!</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">multiple_sites</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span>sites <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'12304500'</span>, <span class="st">'14159200'</span><span class="op">)</span>,
+                               parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,
+                               temporalFilter <span class="op">=</span> <span class="st">'daily'</span>, 
+                               days <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>
+<span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (daily) was successfully downloaded.</span>
+<span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">SO FK MCKENZIE RIVER ABV COUGAR LAKE NR RAINBOW OR</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (daily) was successfully downloaded.</span></code></pre></div>
+<pre><code><span class="co">#&gt; Warning: Ignoring unknown parameters: text_smoothing, hjust</span>
+<span class="co">#&gt; Warning: Ignoring unknown aesthetics: label</span></code></pre>
+<p><img src="stats_files/figure-html/unnamed-chunk-6-1.png" width="768" style="display: block; margin: auto;"></p>
+<p>What’s nice about this is you can run in parallel using the argument <code>parallel = TRUE</code> (see <a href="https://joshualerickson.github.io/whitewater/articles/parallel.html">Parallel</a> vignette for more details on parallel processing). We’ll use the <code><a href="../reference/ww_current_conditions.html">ww_current_conditions()</a></code> to get the current streamflow status for the lower 48 that has a description of <code>All-time low for this day</code> and then we’ll use these sites to view the last 30 days!</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">current_condition</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ww_current_conditions.html">ww_current_conditions</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">StatisticsStatusDescription</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'All-time low for this day'</span><span class="op">)</span>,<span class="op">!</span><span class="va">TimeZoneCode</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'AKDT'</span>, <span class="st">'AST'</span>,<span class="st">'HST'</span>, <span class="st">'GST'</span><span class="op">)</span><span class="op">)</span>  
+
+<span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span><span class="op">(</span>workers <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span>
+
+<span class="va">atl_sites</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span>sites <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">current_condition</span><span class="op">$</span><span class="va">SiteNumber</span><span class="op">)</span>,
+                             parameter_cd <span class="op">=</span> <span class="st">'00060'</span>, 
+                             temporalFilter <span class="op">=</span> <span class="st">'daily'</span>,
+                             days <span class="op">=</span> <span class="fl">30</span>,
+                             parallel <span class="op">=</span> <span class="cn">TRUE</span>,
+                             verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></code></pre></div>
+<p><img src="stats_files/figure-html/unnamed-chunk-8-1.png" width="768" style="display: block; margin: auto;"></p>
+<p><img src="stats_files/figure-html/unnamed-chunk-9-1.png" width="768" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level3">
+<h3 id="monthly-and-yearly">monthly and yearly<a class="anchor" aria-label="anchor" href="#monthly-and-yearly"></a>
+</h3>
+<p>Now we can looked into the other temporal windows like <code>monthly</code> and <code>yearly</code>. These work the same as daily but now we just need to change the argument.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">yaak_monthly_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span><span class="va">yaak_dv</span>, temporalFilter <span class="op">=</span> <span class="st">'monthly'</span><span class="op">)</span>
+<span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (monthly) was successfully downloaded.</span>
+
+<span class="va">yaak_monthly_stats</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> 
+  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">month</span> <span class="op">==</span> <span class="fl">8</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> 
+  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>diff <span class="op">=</span> <span class="va">mean_value</span><span class="op">-</span><span class="va">p50_va</span>,
+         Status <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/if_else.html" class="external-link">if_else</a></span><span class="op">(</span><span class="va">diff</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="st">"Above normal"</span>, <span class="st">"Below normal"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> 
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">year_nu</span>, <span class="va">diff</span>, fill <span class="op">=</span> <span class="va">Status</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> 
+  <span class="fu"><a href="https://ggfx.data-imaginist.com/reference/with_outer_glow.html" class="external-link">with_outer_glow</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span><span class="op">)</span>, sigma <span class="op">=</span> <span class="fl">20</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_fill_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#009900"</span>,<span class="st">"#996600"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>y <span class="op">=</span> <span class="st">'Discharge (cfs)'</span>, x <span class="op">=</span> <span class="st">'Year'</span>, color <span class="op">=</span> <span class="st">''</span>, title <span class="op">=</span> <span class="st">'Comparing monthly mean flow in August to 50% percentile'</span><span class="op">)</span> <span class="op">+</span> 
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_dark</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
+<p><img src="stats_files/figure-html/unnamed-chunk-10-1.png" width="768" style="display: block; margin: auto;"></p>
+<p>This looks interesting! What about the sites that have all-time low for today? Well, just like above we change the <code>temporalFilter</code> argument to <code>monthly</code> instead of <code>daily</code> and then use those site numbers to get back a tibble with mean monthly flows and statistics for each month per year per site.</p>
+<p>We can then look at a few of the sites in a heatmap style graph.</p>
+<p><img src="stats_files/figure-html/unnamed-chunk-12-1.png" width="768" style="display: block; margin: auto;"></p>
+<p><strong>Or, back to the Yaak, MT station.</strong></p>
+<p><img src="stats_files/figure-html/unnamed-chunk-13-1.png" width="768" style="display: block; margin: auto;"></p>
+<p>Same as monthly we can do this for <code>yearly</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">yaak_yearly_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span><span class="va">yaak_dv</span>, temporalFilter <span class="op">=</span> <span class="st">'yearly'</span><span class="op">)</span>
+<span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (yearly) was successfully downloaded.</span></code></pre></div>
+<p>Now we can look at the mean value for the year against the 25th and 75th percentiles.</p>
+<p><img src="stats_files/figure-html/unnamed-chunk-15-1.png" width="768" style="display: block; margin: auto;"></p>
+<p>Or look at it in a bar graph with fill as the status.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R">
+<span class="va">p</span> <span class="op">&lt;-</span> <span class="va">yaak_yearly_stats</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> 
+<span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">year</span>, <span class="va">mean_value</span>, fill <span class="op">=</span> <span class="va">StatisticsStatusDescription</span>,
+                               color <span class="op">=</span> <span class="va">StatisticsStatusDescription</span><span class="op">)</span>, show.legend <span class="op">=</span> <span class="cn">T</span><span class="op">)</span> <span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_color_manual</a></span><span class="op">(</span><span class="st">'Streamflow: status'</span>,
+                     values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>
+                                <span class="st">"All-time low for this year"</span> <span class="op">=</span> <span class="st">"#990000"</span>,
+                                <span class="st">"Much below normal"</span> <span class="op">=</span> <span class="st">"#661111"</span>,
+                                <span class="st">"Below normal"</span> <span class="op">=</span> <span class="st">"#996600"</span>,
+                                <span class="st">"Normal"</span> <span class="op">=</span> <span class="st">"#009900"</span>,
+                                <span class="st">"Above normal"</span> <span class="op">=</span> <span class="st">"#11aaaa"</span>,
+                                <span class="st">"Much above normal"</span> <span class="op">=</span> <span class="st">"#000099"</span>,
+                                <span class="st">"All-time high for this year"</span> <span class="op">=</span> <span class="st">"#000000"</span><span class="op">)</span><span class="op">)</span><span class="op">+</span> 
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_fill_manual</a></span><span class="op">(</span><span class="st">'Streamflow: status'</span>,
+                    values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>
+                      <span class="st">"All-time low for this year"</span> <span class="op">=</span> <span class="st">"#FF0000"</span>,
+                      <span class="st">"Much below normal"</span> <span class="op">=</span> <span class="st">"#BB2222"</span>,
+                      <span class="st">"Below normal"</span> <span class="op">=</span> <span class="st">"#FFAA00"</span>,
+                      <span class="st">"Normal"</span> <span class="op">=</span> <span class="st">"#00ff00"</span>,
+                      <span class="st">"Above normal"</span> <span class="op">=</span> <span class="st">"#44dddd"</span>,
+                      <span class="st">"Much above normal"</span> <span class="op">=</span> <span class="st">"#0000FF"</span>,
+                      <span class="st">"All-time high for this year"</span> <span class="op">=</span> <span class="st">"#000055"</span><span class="op">)</span><span class="op">)</span><span class="op">+</span>
+  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>y <span class="op">=</span> <span class="st">'Mean Discharge (cfs)'</span>,
+       color <span class="op">=</span> <span class="st">''</span>,
+       x <span class="op">=</span> <span class="st">'Year'</span>,
+       title <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">'Yearly mean flows for '</span>, <span class="va">yaak_yearly_stats</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/pull.html" class="external-link">pull</a></span><span class="op">(</span><span class="va">Station</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>
+
+<span class="va">p</span></code></pre></div>
+<p><img src="stats_files/figure-html/unnamed-chunk-16-1.png" width="768" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level3">
+<h3 id="wrap-up">Wrap-up<a class="anchor" aria-label="anchor" href="#wrap-up"></a>
+</h3>
+<p>Hopefully this gives you an idea of how to use whitewater with the <code><a href="../reference/ww_statsUSGS.html">ww_statsUSGS()</a></code> function? If you have any questions or issues please submit a issue on <a href="https://github.com/joshualerickson/whitewater/issues" class="external-link">github</a>. Thanks!</p>
+</div>
+</div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-      </div>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
+</div>
 
 </div>
 

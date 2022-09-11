@@ -214,3 +214,24 @@ iv_error_codes <- function(x){
                    TRUE ~ NA_character_)
 
 }
+
+
+
+#' Prepping for loggin
+#'
+#' @param data data.frame
+#'
+#' @return values are padded if zero for parameter of interest
+#' @noRd
+#'
+pad_zero_for_logging <- function(data){
+
+  param_names <- c("Wtemp","Precip","Flow","GH","SpecCond",
+                   "DO", "pH", "GWL","Turb","WLBLS")
+
+  cols_to_update <- names(data[which(names(data) %in% param_names)])
+
+  data %>%
+    mutate(across(dplyr::all_of(cols_to_update), ~ifelse(.x <= 0 , .x + 0.000001, .x)))
+}
+
