@@ -11,5 +11,6 @@ utils::globalVariables(c(".", "Base-flow", "Date", "Flow", "Maximum", "Mean",
                          "value", "value1", "wy", "year_month", "year_nu",
                          "Total Flow", "param_type", "endDate", "lat", "long",
                          "altitude", "obs_per_wy", "wy_count", "obs_per_month",
-                         "doy", "wy_month_day", "wym_count")
+                         "doy", "wy_month_day", "wym_count", "parameter_cd",
+                         "StatisticsStatusDescription")
 )

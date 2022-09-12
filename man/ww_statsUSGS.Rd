@@ -32,6 +32,9 @@ ww_statsUSGS(
 
 \item{...}{arguments to pass on to \link[furrr]{future_map}.}
 }
+\value{
+a tibble with associated site statistics.
+}
 \description{
 This function uses the \link[dataRetrieval]{readNWISstat} to gather daily, monthly or yearly
 percentiles.
