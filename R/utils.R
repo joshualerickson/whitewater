@@ -235,3 +235,17 @@ pad_zero_for_logging <- function(data){
     mutate(across(dplyr::all_of(cols_to_update), ~ifelse(.x <= 0 , .x + 0.000001, .x)))
 }
 
+
+#' Delay
+#'
+#' @return a number for amount of time to delay
+#'
+delay_setup <- function(){
+
+  ## max 120 requests per minute
+  max_freq_per_min <- 120
+
+  ## delay in seconds between requests
+  delay <- 60/max_freq_per_min * future::nbrOfWorkers()
+
+}

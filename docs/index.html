@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
 <script src="pkgdown.js"></script><meta property="og:title" content="Parallel Processing Options for USGS Data Retrieval">
-<meta property="og:description" content="Provides methods for retrieving USGS water data using sequential and parallel processing.">
+<meta property="og:description" content="Provides methods for retrieving USGS water data using sequential and parallel processing. In addition to parallel methods, data wrangling and additional statistical attributes are provided. ">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -97,7 +97,7 @@
 <div class="section level2">
 <h2 id="attention">Attention!<a class="anchor" aria-label="anchor" href="#attention"></a>
 </h2>
-<p><strong>Please, due to potentially crashing (USGS Water Services)[<a href="https://waterservices.usgs.gov/" class="external-link uri">https://waterservices.usgs.gov/</a>] REST services keep your parallel processing to 10 cores/workers or less. By following this limit, we can still benefit from parallel processing but also being mindful/respectful to the USGS Water Services via <a href="https://github.com/USGS-R/dataRetrieval" class="external-link">{dataRetrieval}</a> and REST services. Thank you!</strong></p>
+<p><strong>Due to potentially crashing (USGS Water Services)[<a href="https://waterservices.usgs.gov/" class="external-link uri">https://waterservices.usgs.gov/</a>] REST services parallel processing is kept to 120 requests/min. By following this rate limit, we can still benefit from parallel processing but also being mindful/respectful to the USGS Water Services via <a href="https://github.com/USGS-R/dataRetrieval" class="external-link">{dataRetrieval}</a> and REST services. Thank you!</strong></p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -127,7 +127,7 @@
                                            parameterCd <span class="op">=</span> <span class="st">'00060'</span>,
                                            drainAreaMax <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"# of sites: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">huc17_sites</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; # of sites:  676</span>
+<span class="co">#&gt; # of sites:  675</span>
 
 <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sf.html" class="external-link">st_as_sf</a></span><span class="op">(</span><span class="va">huc17_sites</span>, coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'dec_long_va'</span>, <span class="st">'dec_lat_va'</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> 
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 
@@ -139,7 +139,7 @@
 <code class="sourceCode R"><span class="co">#need to call future::plan()</span>
 
 <span class="co">##### Remember, please use 10 or less workers #####</span>
-<span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span><span class="op">(</span>workers <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span>
+<span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="fu"><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">multisession</a></span><span class="op">(</span>workers <span class="op">=</span> <span class="fl">11</span><span class="op">)</span><span class="op">)</span>
 
 <span class="co">#running on 11 cores</span>
 
@@ -151,32 +151,32 @@
                     verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>
 <span class="op">}</span><span class="op">)</span>
 <span class="co">#&gt;    user  system elapsed </span>
-<span class="co">#&gt;   39.62    3.00  475.62</span>
+<span class="co">#&gt;   39.96    2.47  559.56</span>
 
 <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pnw_dv</span><span class="op">)</span>
-<span class="co">#&gt; [1] 11714373</span>
+<span class="co">#&gt; [1] 11752061</span>
 
 <span class="va">pnw_dv</span>
-<span class="co">#&gt; # A tibble: 11,714,373 x 25</span>
-<span class="co">#&gt;    agency_cd site_no  Date        Flow Flow_cd drainage_area Station   lat  long</span>
-<span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;    &lt;date&gt;     &lt;dbl&gt; &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt;</span>
-<span class="co">#&gt;  1 USGS      10396000 1911-04-01   160 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  2 USGS      10396000 1911-04-02   166 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  3 USGS      10396000 1911-04-03   173 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  4 USGS      10396000 1911-04-04   180 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  5 USGS      10396000 1911-04-05   187 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  6 USGS      10396000 1911-04-06   232 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  7 USGS      10396000 1911-04-07   207 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  8 USGS      10396000 1911-04-08   182 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt;  9 USGS      10396000 1911-04-09   157 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt; 10 USGS      10396000 1911-04-10   132 A                 200 DONNER~  42.8 -119.</span>
-<span class="co">#&gt; # ... with 11,714,363 more rows, and 16 more variables: altitude &lt;dbl&gt;,</span>
+<span class="co">#&gt; # A tibble: 11,752,061 x 28</span>
+<span class="co">#&gt;    Station site_no drainage_area   lat  long altitude agency_cd Date        Flow</span>
+<span class="co">#&gt;    &lt;chr&gt;   &lt;chr&gt;           &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;     &lt;date&gt;     &lt;dbl&gt;</span>
+<span class="co">#&gt;  1 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-01   160</span>
+<span class="co">#&gt;  2 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-02   166</span>
+<span class="co">#&gt;  3 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-03   173</span>
+<span class="co">#&gt;  4 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-04   180</span>
+<span class="co">#&gt;  5 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-05   187</span>
+<span class="co">#&gt;  6 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-06   232</span>
+<span class="co">#&gt;  7 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-07   207</span>
+<span class="co">#&gt;  8 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-08   182</span>
+<span class="co">#&gt;  9 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-09   157</span>
+<span class="co">#&gt; 10 DONNER~ 103960~          124.  42.8 -119.     4254 USGS      1911-04-10   132</span>
+<span class="co">#&gt; # ... with 11,752,051 more rows, and 19 more variables: Flow_cd &lt;chr&gt;,</span>
 <span class="co">#&gt; #   STILLING.WELL_Flow &lt;dbl&gt;, STILLING.WELL_Flow_cd &lt;chr&gt;,</span>
 <span class="co">#&gt; #   .Estimated.By.Regression._Flow &lt;dbl&gt;,</span>
 <span class="co">#&gt; #   .Estimated.By.Regression._Flow_cd &lt;chr&gt;, ..2.._Flow &lt;dbl&gt;,</span>
 <span class="co">#&gt; #   ..2.._Flow_cd &lt;chr&gt;, .Discharge.1921.to.1952._Flow &lt;dbl&gt;,</span>
 <span class="co">#&gt; #   .Discharge.1921.to.1952._Flow_cd &lt;chr&gt;, year &lt;dbl&gt;, month &lt;dbl&gt;, day &lt;int&gt;,</span>
-<span class="co">#&gt; #   month_day &lt;chr&gt;, wy &lt;int&gt;, month_abb &lt;fct&gt;, obs_per_wy &lt;int&gt;</span></code></pre></div>
+<span class="co">#&gt; #   doy &lt;dbl&gt;, wy_doy &lt;dbl&gt;, month_day &lt;chr&gt;, wy &lt;int&gt;, month_abb &lt;fct&gt;, ...</span></code></pre></div>
 <p>Now we can use other <code>ww_</code> functions to filter the data by water year, month, water year and month, as well as stat reporting (percentiles comparing current readings).</p>
 </div>
 <div class="section level3">
@@ -185,51 +185,28 @@
 <p>Same as above, we can just call <code>parallel = TRUE</code> to run in parallel since we’ll be getting peak flows from <code><a href="https://rdrr.io/pkg/dataRetrieval/man/readNWISpeak.html" class="external-link">dataRetrieval::readNWISpeak()</a></code>.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span><span class="op">{</span>
-<span class="va">pnw_wy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="reference/ww_wyUSGS.html">ww_wyUSGS</a></span><span class="op">(</span><span class="va">pnw_dv</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span><span class="op">)</span>
+<span class="va">pnw_wy</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressMessages</a></span><span class="op">(</span><span class="fu"><a href="reference/ww_wyUSGS.html">ww_wyUSGS</a></span><span class="op">(</span><span class="va">pnw_dv</span>,
+                                     parallel <span class="op">=</span> <span class="cn">TRUE</span>,
+                                     verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span>
 <span class="op">}</span><span class="op">)</span>
-<span class="co">#&gt; Warning: One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
-<span class="co">#&gt; One or more parsing issues, see `problems()` for details</span>
 <span class="co">#&gt;    user  system elapsed </span>
-<span class="co">#&gt;   16.52    0.77   89.80</span>
+<span class="co">#&gt;   16.86    0.72  418.25</span>
 
 <span class="va">pnw_wy</span>
-<span class="co">#&gt; # A tibble: 32,670 x 27</span>
+<span class="co">#&gt; # A tibble: 32,663 x 27</span>
 <span class="co">#&gt;    Station   site_no    wy peak_va peak_dt    drainage_area   lat  long altitude</span>
 <span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;   &lt;int&gt;   &lt;dbl&gt; &lt;date&gt;             &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;</span>
-<span class="co">#&gt;  1 ABIQUA C~ 142007~  2014      NA NA                  72.9  45.0 -123.      193</span>
-<span class="co">#&gt;  2 ABIQUA C~ 142007~  2015    3330 2014-12-21          72.9  45.0 -123.      193</span>
-<span class="co">#&gt;  3 ABIQUA C~ 142007~  2016    5980 2015-12-07          72.9  45.0 -123.      193</span>
-<span class="co">#&gt;  4 ABIQUA C~ 142007~  2017    3740 2017-03-09          72.9  45.0 -123.      193</span>
-<span class="co">#&gt;  5 ABIQUA C~ 142007~  2018    4290 2017-10-22          72.9  45.0 -123.      193</span>
-<span class="co">#&gt;  6 ABIQUA C~ 142007~  2019    3700 2019-04-07          72.9  45.0 -123.      193</span>
-<span class="co">#&gt;  7 ABIQUA C~ 142007~  2020    2600 2020-01-28          72.9  45.0 -123.      193</span>
-<span class="co">#&gt;  8 ABIQUA C~ 142007~  2021    5360 2020-12-20          72.9  45.0 -123.      193</span>
-<span class="co">#&gt;  9 ABIQUA C~ 142007~  2022      NA NA                  72.9  45.0 -123.      193</span>
-<span class="co">#&gt; 10 AHTANUM ~ 125025~  1904      NA NA                 173    46.5 -120.      940</span>
-<span class="co">#&gt; # ... with 32,660 more rows, and 18 more variables: obs_per_wy &lt;int&gt;,</span>
+<span class="co">#&gt;  1 ABIQUA C~ 142007~  2014      NA NA                  45.3  45.0 -123.      193</span>
+<span class="co">#&gt;  2 ABIQUA C~ 142007~  2015    3330 2014-12-21          45.3  45.0 -123.      193</span>
+<span class="co">#&gt;  3 ABIQUA C~ 142007~  2016    5980 2015-12-07          45.3  45.0 -123.      193</span>
+<span class="co">#&gt;  4 ABIQUA C~ 142007~  2017    3740 2017-03-09          45.3  45.0 -123.      193</span>
+<span class="co">#&gt;  5 ABIQUA C~ 142007~  2018    4290 2017-10-22          45.3  45.0 -123.      193</span>
+<span class="co">#&gt;  6 ABIQUA C~ 142007~  2019    3700 2019-04-07          45.3  45.0 -123.      193</span>
+<span class="co">#&gt;  7 ABIQUA C~ 142007~  2020    2600 2020-01-28          45.3  45.0 -123.      193</span>
+<span class="co">#&gt;  8 ABIQUA C~ 142007~  2021    5360 2020-12-20          45.3  45.0 -123.      193</span>
+<span class="co">#&gt;  9 ABIQUA C~ 142007~  2022      NA NA                  45.3  45.0 -123.      193</span>
+<span class="co">#&gt; 10 AHTANUM ~ 125025~  1904      NA NA                 107.   46.5 -120.      940</span>
+<span class="co">#&gt; # ... with 32,653 more rows, and 18 more variables: obs_per_wy &lt;int&gt;,</span>
 <span class="co">#&gt; #   wy_count &lt;int&gt;, Flow_sum &lt;dbl&gt;, Flow_max &lt;dbl&gt;, Flow_min &lt;dbl&gt;,</span>
 <span class="co">#&gt; #   Flow_mean &lt;dbl&gt;, Flow_median &lt;dbl&gt;, Flow_stdev &lt;dbl&gt;, Flow_coef_var &lt;dbl&gt;,</span>
 <span class="co">#&gt; #   Flow_max_dnorm &lt;dbl&gt;, Flow_min_dnorm &lt;dbl&gt;, Flow_mean_dnorm &lt;dbl&gt;,</span>
@@ -312,7 +289,7 @@
 <div class="developers">
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
-<li>Josh Erickson <br><small class="roles"> Author, maintainer </small>  </li>
+<li>Josh Erickson <br><small class="roles"> Author, maintainer, copyright holder </small>  </li>
 </ul>
 </div>
 

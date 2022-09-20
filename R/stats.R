@@ -99,13 +99,17 @@ ww_reportUSGSdv <- function(procDV,
 
   site_station_days <- prepping_reports(procDV, sites, parameter_cd)
 
+  delay <- delay_setup()
+
   #run over api, pulling necessary data.
 
   if(isTRUE(parallel)){
 
     usgs_statsdv <- site_station_days %>%
       split(.$sites) %>%
-      furrr::future_map(safely(~usgs_stats_fun(., type = 'daily', verbose = verbose)),...) %>%
+      furrr::future_map(safely(~usgs_stats_fun(., type = 'daily',
+                                                  verbose = verbose,
+                                                  delay = delay)),...) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%
@@ -115,7 +119,9 @@ ww_reportUSGSdv <- function(procDV,
 
     usgs_statsdv <- site_station_days %>%
       split(.$sites) %>%
-      purrr::map(safely(~usgs_stats_fun(., type = 'daily', verbose = verbose))) %>%
+      purrr::map(safely(~usgs_stats_fun(., type = 'daily',
+                                           verbose = verbose,
+                                           delay = 0))) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%
@@ -168,10 +174,11 @@ ww_reportUSGSdv <- function(procDV,
 #' @param data data.frame
 #' @param type what type of temporal stat to perform
 #' @param verbose logical to print information
+#' @param delay time to delay in future_call
 #'
 #' @return a data.frame with daily or monthly stats from readNWISstat
 #' @noRd
-usgs_stats_fun <- function(data, type, verbose) {
+usgs_stats_fun <- function(data, type, verbose, delay) {
 
 
   final_data <- switch(type,
@@ -222,6 +229,9 @@ usgs_stats_fun <- function(data, type, verbose) {
       }
     }
   }
+
+  Sys.sleep(delay)
+
   final_data
 
 }
@@ -307,13 +317,15 @@ ww_reportUSGSmv <- function(procDV,
 
   site_station_days <- prepping_reports(procDV, sites, parameter_cd)
 
+  delay <- delay_setup()
+
   #run over api, pulling necessary data.
 
   if(isTRUE(parallel)){
 
     usgs_statsmv <- site_station_days %>%
       split(.$sites) %>%
-      furrr::future_map(safely(~usgs_stats_fun(., type = 'monthly', verbose = verbose)),...) %>%
+      furrr::future_map(safely(~usgs_stats_fun(., type = 'monthly', verbose = verbose,delay = delay)),...) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%
@@ -323,7 +335,7 @@ ww_reportUSGSmv <- function(procDV,
 
     usgs_statsmv <- site_station_days %>%
       split(.$sites) %>%
-      purrr::map(safely(~usgs_stats_fun(., type = 'monthly', verbose = verbose))) %>%
+      purrr::map(safely(~usgs_stats_fun(., type = 'monthly', verbose = verbose, delay = 0))) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%
@@ -407,13 +419,15 @@ ww_reportUSGSav <- function(procDV,
 
   site_station_days <- prepping_reports(procDV, sites, parameter_cd)
 
+  delay <- delay_setup()
+
   #run over api, pulling necessary data.
 
   if(isTRUE(parallel)){
 
     usgs_statsav <- site_station_days %>%
       split(.$sites) %>%
-      furrr::future_map(safely(~usgs_stats_fun(., type = 'yearly', verbose = verbose)),...) %>%
+      furrr::future_map(safely(~usgs_stats_fun(., type = 'yearly', verbose = verbose, delay = delay)),...) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%
@@ -423,7 +437,7 @@ ww_reportUSGSav <- function(procDV,
 
     usgs_statsav <- site_station_days %>%
       split(.$sites) %>%
-      purrr::map(safely(~usgs_stats_fun(., type = 'yearly', verbose = verbose))) %>%
+      purrr::map(safely(~usgs_stats_fun(., type = 'yearly', verbose = verbose, delay = 0))) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill() %>%

@@ -4,10 +4,10 @@ Version: 0.1.0
 Authors@R: 
     person(given = "Josh",
            family = "Erickson",
-           role = c('aut', 'cre'),
+           role = c('aut', 'cre', 'cph'),
            email = "joshualerickson@gmail.com"
            )
-Description: Provides methods for retrieving USGS water data using sequential and parallel processing.
+Description: Provides methods for retrieving USGS water data using sequential and parallel processing. In addition to parallel methods, data wrangling and additional statistical attributes are provided. 
 URL: https://github.com/joshualerickson/whitewater/,
     https://joshualerickson.github.io/whitewater/
 BugReports: https://github.com/joshualerickson/whitewater/issues/
@@ -28,14 +28,14 @@ Imports:
     usethis,
     lubridate,
     readr,
-    tidyr
+    tidyr,
+    future
 Suggests: 
     ggplot2,
     covr,
     rmarkdown,
     knitr,
     ggfx,
-    future,
     broom,
     patchwork,
     jsonlite,
@@ -44,5 +44,4 @@ Suggests:
 Config/testthat/edition: 3
 Depends: 
     R (>= 3.4.0)
-VignetteBuilder: knitr
 LazyData: true

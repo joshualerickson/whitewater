@@ -27,7 +27,7 @@ The goal of whitewater is to provide sequential and parallel processing for USGS
 
 ## Attention!  
 
-**Please, due to potentially crashing (USGS Water Services)[https://waterservices.usgs.gov/] REST services keep your parallel processing to 10 cores/workers or less. By following this limit, we can still benefit from parallel processing but also being mindful/respectful to the USGS Water Services via [{dataRetrieval}](https://github.com/USGS-R/dataRetrieval) and REST services. Thank you!**    
+**Due to potentially crashing (USGS Water Services)[https://waterservices.usgs.gov/] REST services parallel processing is kept to 120 requests/min. By following this rate limit, we can still benefit from parallel processing but also being mindful/respectful to the USGS Water Services via [{dataRetrieval}](https://github.com/USGS-R/dataRetrieval) and REST services. Thank you!**    
 
 ## Installation
 
@@ -70,7 +70,7 @@ st_as_sf(huc17_sites, coords = c('dec_long_va', 'dec_lat_va')) %>%
 #need to call future::plan()
 
 ##### Remember, please use 10 or less workers #####
-plan(multisession(workers = 10))
+plan(multisession(workers = 11))
 
 #running on 11 cores
 
@@ -92,10 +92,12 @@ Now we can use other `ww_` functions to filter the data by water year, month, wa
 ### Water Year  
 
 Same as above, we can just call `parallel = TRUE` to run in parallel since we'll be getting peak flows from `dataRetrieval::readNWISpeak()`.  
-```{r}
+```{r, warning = F, message=F, error=F}
 
 system.time({
-pnw_wy <- suppressMessages(ww_wyUSGS(pnw_dv, parallel = TRUE, verbose = F))
+pnw_wy <- suppressMessages(ww_wyUSGS(pnw_dv,
+                                     parallel = TRUE,
+                                     verbose = FALSE))
 })
 
 pnw_wy

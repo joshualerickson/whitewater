@@ -1,3 +1,5 @@
+testthat::skip_on_cran()
+
 test_that("usgs flow", {
 
 yaak_dv <- ww_dvUSGS('12304500')

@@ -63,6 +63,8 @@ ww_dvUSGS <- function(sites,
 
   site_id_usgs <- data.frame(sites = sites)
 
+  delay <- delay_setup()
+
   if(isTRUE(parallel)){
 
     usgs_raw_dv <- site_id_usgs %>%
@@ -72,7 +74,8 @@ ww_dvUSGS <- function(sites,
                                                                      start_date,
                                                                      end_date,
                                                                      stat_cd,
-                                                                     verbose
+                                                                     verbose,
+                                                                     delay = delay
                                                                      )),
                         ...) %>%
                     purrr::keep(~length(.) != 0) %>%
@@ -88,7 +91,8 @@ ww_dvUSGS <- function(sites,
                                                               start_date,
                                                               end_date,
                                                               stat_cd,
-                                                              verbose
+                                                              verbose,
+                                                              delay = 0
                     ))) %>%
                     purrr::keep(~length(.) != 0) %>%
                     purrr::map(~.x[['result']]) %>%
@@ -149,10 +153,11 @@ ww_dvUSGS <- function(sites,
 #' @param end_date A character of date format, e.g. \code{"1990-09-01"}
 #' @param stat_cd character USGS statistic code. This is usually 5 digits. Daily mean (00003) is the default.
 #' @param verbose logical for printing information.
+#' @param delay time to delay in future_call
 #' @importFrom crayon red
 #' @noRd
 #' @return A tidied data frame with gage meta-data.
-prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd, verbose) {
+prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd, verbose, delay) {
 
   gage_data <- readNWISdv(siteNumbers = site_no,
                           parameterCd = parameter_cd,
@@ -196,7 +201,12 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
      }
   }}
 
+  Sys.sleep(delay)
+
   final_data
+
+
+
 }
 
 
@@ -336,12 +346,14 @@ if(isTRUE(verbose)){
 
     if("Flow" %in% cols){
 
+      delay <- delay_setup()
+
       wy_month <- attributes(usgs_raw)$wy_month
 
 if(isTRUE(verbose)){
       cli::cli_alert('now starting to gather peak flows using dataRetrieval::readNWISpeak')
 }
-      usgs_min_max_wy <- ww_peakUSGSdv(usgs_min_max_wy, parallel = parallel, wy_month = wy_month, verbose = verbose)
+      usgs_min_max_wy <- ww_peakUSGSdv(usgs_min_max_wy, parallel = parallel, wy_month = wy_month, verbose = verbose, delay = delay)
 
     }
 
@@ -363,12 +375,18 @@ ww_peakUSGS <- function(sites, parallel = FALSE,wy_month = 10,verbose = TRUE, ..
 
   peak_sites <- data.frame(peaks = sites)
 
+  delay = delay_setup()
 
   if(isTRUE(parallel)){
 
     peaks <- peak_sites %>%
       split(.$peaks) %>%
-      furrr::future_map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month, verbose = verbose, dv = F)), ...) %>%
+      furrr::future_map(purrr::safely(~peaks_USGS(.$peaks,
+                                                  wy_month = wy_month,
+                                                  verbose = verbose,
+                                                  dv = F,
+                                                  ,
+                                                  delay = delay)), ...) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill()
@@ -377,7 +395,11 @@ ww_peakUSGS <- function(sites, parallel = FALSE,wy_month = 10,verbose = TRUE, ..
 
     peaks <- peak_sites %>%
       split(.$peaks) %>%
-      purrr::map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month, verbose = verbose, dv = F))) %>%
+      purrr::map(purrr::safely(~peaks_USGS(.$peaks,
+                                           wy_month = wy_month,
+                                           verbose = verbose,
+                                           dv = F,
+                                           delay = 0))) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       plyr::rbind.fill()
@@ -689,12 +711,15 @@ ww_floorIVUSGS <- function(procDV,
   cols <- site_station_days$cols$cols
   #run over api, pulling necessary data.
 
+  delay <- delay_setup()
+
   if(isTRUE(parallel)){
 
     usgs_download_hourly <- site_station_days %>%
                             split(.$sites) %>%
                             furrr::future_map(safely(~iv_USGS(., options = .$options[[1]],
-                                                              type = 'hour', verbose = verbose)), ...) %>%
+                                                              type = 'hour', verbose = verbose,
+                                                              delay = delay)), ...) %>%
                             purrr::keep(~length(.) != 0) %>%
                             purrr::map(~.x[['result']]) %>%
                             purrr::map(~rename_with(., ~gsub(".*_","", .x),
@@ -706,7 +731,8 @@ ww_floorIVUSGS <- function(procDV,
     usgs_download_hourly <- site_station_days %>%
                             split(.$sites) %>%
                             purrr::map(safely(~iv_USGS(., options = .$options[[1]],
-                                                       type = 'hour', verbose = verbose)))%>%
+                                                       type = 'hour', verbose = verbose,
+                                                       delay = 0)))%>%
                             purrr::keep(~length(.) != 0) %>%
                             purrr::map(~.x[['result']]) %>%
                             purrr::map(~rename_with(., ~gsub(".*_","", .x),
@@ -824,12 +850,15 @@ ww_instantaneousUSGS <- function(procDV,
   cols <- site_station_days$cols$cols
   #run over api, pulling necessary data.
 
+  delay <- delay_setup()
+
   if(isTRUE(parallel)){
 
     usgs_download_inst <- site_station_days %>%
       split(.$sites) %>%
       furrr::future_map(safely(~iv_USGS(., options = .$options[[1]],
-                                        type = 'inst', verbose = verbose)),...) %>%
+                                        type = 'inst', verbose = verbose,
+                                        delay = delay)),...) %>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']])%>%
       purrr::map(~rename_with(., ~gsub(".*_","", .x),
@@ -841,7 +870,8 @@ ww_instantaneousUSGS <- function(procDV,
     usgs_download_inst <- site_station_days %>%
       split(.$sites) %>%
       purrr::map(safely(~iv_USGS(., options = .$options[[1]],
-                                 type = 'inst', verbose = verbose)))%>%
+                                 type = 'inst', verbose = verbose,
+                                 delay = 0)))%>%
       purrr::keep(~length(.) != 0) %>%
       purrr::map(~.x[['result']]) %>%
       purrr::map(~rename_with(., ~gsub(".*_","", .x),
@@ -876,11 +906,12 @@ ww_instantaneousUSGS <- function(procDV,
 #' @param options a list of API arguments
 #' @param type character of API call
 #' @param verbose logical for printing information
+#' @param delay time to delay in future_call
 #'
 #' @noRd
 #' @return A data.frame with instantaneous values
 #'
-iv_USGS <- function(data, options, type, verbose){
+iv_USGS <- function(data, options, type, verbose, delay){
 
   df_final <- data.frame()
 
@@ -932,6 +963,7 @@ iv_USGS <- function(data, options, type, verbose){
 
   df_final <- plyr::rbind.fill(df_final, df)
 
+
   }
 if(isTRUE(verbose)){
   if(all(is.na(df_final[,c('site_no', 'datetime')]))){
@@ -971,6 +1003,9 @@ if(isTRUE(verbose)){
 
   }
 }
+
+ Sys.sleep(delay)
+
  df_final
 
 }
@@ -981,10 +1016,11 @@ if(isTRUE(verbose)){
 #' @param wy_month a water year to filter by
 #' @param verbose \code{logical} for printing information. TRUE (default).
 #' @param dv internal logical
+#' @param delay time to delay in future_call
 #'
 #' @return a data.frame with instantaneous peaks from USGS
 #' @noRd
-peaks_USGS <- function(site_no, wy_month, verbose, dv = TRUE){
+peaks_USGS <- function(site_no, wy_month, verbose, dv = TRUE, delay){
 
  final_data <- dataRetrieval::readNWISpeak(site_no)%>% select(peak_va, peak_dt, site_no) %>%
                mutate(wy = waterYear(peak_dt, wy_month, TRUE))
@@ -1012,6 +1048,9 @@ if(isTRUE(verbose)){
 
   }
 }
+
+  Sys.sleep(delay)
+
   final_data
 
 
@@ -1024,12 +1063,13 @@ if(isTRUE(verbose)){
 #' @param parallel whether to use future_map or not
 #' @param wy_month a water year to filter by
 #' @param verbose \code{logical} for printing information. TRUE (default).
+#' @param delay time to delay in future_call
 #' @param ... other stuff to pass to future_map
 #'
 #' @return a \code{tibble} with peaks by water year
 #' @noRd
 
-ww_peakUSGSdv <- function(data, parallel,wy_month,verbose, ...) {
+ww_peakUSGSdv <- function(data, parallel,wy_month,verbose,delay, ...) {
 
 peak_sites <- data.frame(peaks = unique(data$site_no))
 
@@ -1038,7 +1078,10 @@ if(isTRUE(parallel)){
 
   peaks <- peak_sites %>%
             split(.$peaks) %>%
-            furrr::future_map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month, verbose = verbose)), ...) %>%
+            furrr::future_map(purrr::safely(~peaks_USGS(.$peaks,
+                                                        wy_month = wy_month,
+                                                        verbose = verbose,
+                                                        delay = delay)), ...) %>%
             purrr::keep(~length(.) != 0) %>%
             purrr::map(~.x[['result']]) %>%
             plyr::rbind.fill()
@@ -1047,7 +1090,10 @@ if(isTRUE(parallel)){
 
   peaks <- peak_sites %>%
             split(.$peaks) %>%
-            purrr::map(purrr::safely(~peaks_USGS(.$peaks, wy_month = wy_month, verbose = verbose))) %>%
+            purrr::map(purrr::safely(~peaks_USGS(.$peaks,
+                                                 wy_month = wy_month,
+                                                 verbose = verbose,
+                                                 delay = 0))) %>%
             purrr::keep(~length(.) != 0) %>%
             purrr::map(~.x[['result']]) %>%
             plyr::rbind.fill()

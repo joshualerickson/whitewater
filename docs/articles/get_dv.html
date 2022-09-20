@@ -116,9 +116,9 @@
 <p>The main flow in whitewater is to start with <code><a href="../reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> and then the user can use that object for further filtering within functions, e.g. <code><a href="../reference/ww_wyUSGS.html">ww_wyUSGS()</a></code>, <code><a href="../reference/ww_wymUSGS.html">ww_wymUSGS()</a></code>, <code><a href="../reference/ww_monthUSGS.html">ww_monthUSGS()</a></code>, etc. We’ll start with just getting daily values of water data and then use that object to supply to the others. Of note, you can specify the water year <code>wy_month</code>, which is the beginning month for that water year.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshualerickson/whitewater/" class="external-link">whitewater</a></span><span class="op">)</span>
-<span class="co">#&gt; <span style="color: #000000;"> Due to potentially crashing (USGS Water Services) REST services keep your parallel processing to </span></span>
-<span class="co"><span style="color: #000000;">#&gt; </span><span style="color: #BB0000; font-weight: bold;"> 10 cores/workers or less </span></span>
-<span class="co"><span style="color: #BB0000; font-weight: bold;">#&gt; </span><span style="color: #000000;"> until further notice. Thank you!</span></span>
+<span class="co">#&gt; <span style="color: #000000;"> Due to potentially crashing (USGS Water Services) REST services </span></span>
+<span class="co"><span style="color: #000000;">#&gt;  parallel processing is kept to </span><span style="color: #BB0000; font-weight: bold;"> 120 requests/min. </span></span>
+<span class="co"><span style="color: #000000;">#&gt;  Thank you!</span></span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span>
 <span class="co">#&gt; </span>
 <span class="co">#&gt; Attaching package: 'dplyr'</span>
