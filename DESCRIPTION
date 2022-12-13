@@ -1,6 +1,6 @@
 Package: whitewater
 Title: Parallel Processing Options for USGS Data Retrieval
-Version: 0.1.0
+Version: 0.1.1.9000
 Authors@R: 
     person(given = "Josh",
            family = "Erickson",

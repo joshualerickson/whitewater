@@ -260,7 +260,12 @@ test_that('wwOptions, ww_floorIVUSGS, ww_instantaneousUSGS', {
   expect_equal(nrow(yaak_river_iv), 1)
 
 
+  ## checking date column works
 
+  yaak_river_iv <- ww_instantaneousUSGS(yaak_river_dv)
+
+
+  expect_equal(class(yaak_river_iv$date)[1], 'POSIXct')
 })
 
 

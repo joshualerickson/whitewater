@@ -896,9 +896,9 @@ ww_instantaneousUSGS <- function(procDV,
   #   dplyr::select_if(all_na) %>%
   #   dplyr::rename_with(~name_params_to_update(.x), dplyr::contains('param'))
 
-  usgs_download_inst <- usgs_download_inst %>%
+  suppressWarnings(usgs_download_inst <- usgs_download_inst %>%
                         dplyr::filter(!is.na(date)) %>%
-                        dplyr::mutate_all(~ifelse(is.nan(.), NA_real_, .))
+                        dplyr::mutate(dplyr::across(is.numeric, ~ifelse(is.nan(.x), NA_real_, .x))))
 }
 #' Prep USGS Instantaneous
 #'
