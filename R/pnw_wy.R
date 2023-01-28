@@ -35,5 +35,4 @@
 #'   \item{DamIndex}{dam index}
 #' }
 #' @return a tibble
-#' @noRd
 "pnw_wy"

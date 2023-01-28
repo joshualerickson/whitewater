@@ -103,15 +103,7 @@ ww_dvUSGS <- function(sites,
 
   if(is.null(usgs_raw_dv)){usethis::ui_stop("site query ran into an error: please check parameters or stat code...")}
 
-  leap_years <- c(1832, 1836, 1840, 1844, 1848, 1852,
-                  1856, 1860, 1864, 1868, 1872, 1876,
-                  1880, 1884, 1888, 1892, 1896, 1904,
-                  1908, 1912, 1916, 1920, 1924, 1928,
-                  1932, 1936, 1940, 1944, 1948, 1952,
-                  1956, 1960, 1964, 1968, 1972, 1976,
-                  1980, 1984, 1988, 1992, 1996, 2000,
-                  2004, 2008, 2012, 2016, 2020, 2024,
-                  2028, 2032, 2036, 2040, 2044, 2048)
+  leap_years <- c(seq(1832,by = 4, length.out = 2000))
 
   usgs_raw_dv <- usgs_raw_dv %>%
                   dt_to_tibble() %>%
@@ -883,22 +875,22 @@ ww_instantaneousUSGS <- function(procDV,
   #final step: clean up data
 
   usgs_download_inst <- usgs_download_inst %>%
-    dt_to_tibble() %>%
-    mutate(date = ymd_hm(datetime))
+    dt_to_tibble()
 
   suppressWarnings(usgs_download_inst <- usgs_download_inst %>%
     mutate(across(dplyr::any_of(cols), iv_error_codes, .names = "{.col}_error")) %>%
     mutate(across(dplyr::any_of(cols), readr::parse_number)) %>%
-    select(Station, site_no,param_type, date, dplyr::any_of(cols), dplyr::ends_with("_error")))
+    select(Station, site_no,param_type,date = 'datetime', dplyr::any_of(cols), dplyr::ends_with("_error")))
 
   # usgs_download_inst <- usgs_download_inst %>%
   #   tidyr::pivot_wider(names_from = param_type, values_from = dplyr::any_of(cols)) %>%
   #   dplyr::select_if(all_na) %>%
   #   dplyr::rename_with(~name_params_to_update(.x), dplyr::contains('param'))
 
-  suppressWarnings(usgs_download_inst <- usgs_download_inst %>%
+  usgs_download_inst <- usgs_download_inst %>%
                         dplyr::filter(!is.na(date)) %>%
-                        dplyr::mutate(dplyr::across(is.numeric, ~ifelse(is.nan(.x), NA_real_, .x))))
+                        dplyr::mutate_all(~ifelse(is.nan(.), NA_real_, .)) %>%
+    mutate(date = lubridate::ymd_hm(as.character(date, "%Y-%m-%d %H:%M")))
 }
 #' Prep USGS Instantaneous
 #'
