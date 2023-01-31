@@ -1,13 +1,13 @@
 Package: whitewater
-Title: Parallel Processing Options for package 'dataRetrieval'
-Version: 0.1.1.9000
+Title: Parallel Processing Options for Package 'dataRetrieval'
+Version: 0.1.2
 Authors@R: 
     person(given = "Josh",
            family = "Erickson",
            role = c('aut', 'cre', 'cph'),
            email = "joshualerickson@gmail.com"
            )
-Description: Provides methods for retrieving United States Geological Survey (USGS) water data using sequential and parallel processing. In addition to parallel methods, data wrangling and additional statistical attributes are provided. 
+Description: Provides methods for retrieving United States Geological Survey (USGS) water data using sequential and parallel processing (Bengtsson, 2022 <doi:10.32614/RJ-2021-048>). In addition to parallel methods, data wrangling and additional statistical attributes are provided. 
 URL: https://github.com/joshualerickson/whitewater/,
     https://joshualerickson.github.io/whitewater/
 BugReports: https://github.com/joshualerickson/whitewater/issues/

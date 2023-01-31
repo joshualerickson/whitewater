@@ -27,7 +27,7 @@ The goal of whitewater is to provide sequential and parallel processing for USGS
 
 ## Attention!  
 
-**Due to potentially crashing (USGS Water Services)[https://waterservices.usgs.gov/] REST services parallel processing is kept to 120 requests/min. By following this rate limit, we can still benefit from parallel processing but also being mindful/respectful to the USGS Water Services via [{dataRetrieval}](https://github.com/USGS-R/dataRetrieval) and REST services. Thank you!**    
+**Due to potentially crashing (USGS Water Services)[https://waterservices.usgs.gov/] REST services parallel processing is kept to 120 requests/min. By following this rate limit, we can still benefit from parallel processing but also being mindful/respectful to the USGS Water Services via [{dataRetrieval}](https://github.com/DOI-USGS/dataRetrieval) and REST services. Thank you!**    
 
 ## Installation
 
@@ -40,7 +40,7 @@ devtools::install_github("joshualerickson/whitewater")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem: get daily values of discharge for multiple sites (all active sites in Pacific Northwest (Region 17)) using parallel processing. Please see [furrr](https://cran.r-project.org/web/packages/furrr/index.html) and [future](https://cran.r-project.org/web/packages/future/index.html) for more details on parallel processing methods.  
+This is a basic example which shows you how to solve a common problem: get daily values of discharge for multiple sites (all active sites in Pacific Northwest (Region 17)) using parallel processing. Please see [furrr](https://CRAN.R-project.org/package=furrr) and [future](https://CRAN.R-project.org/package=future) for more details on parallel processing methods.  
 
 ### Running in parallel  
 
