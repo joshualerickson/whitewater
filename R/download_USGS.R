@@ -617,7 +617,7 @@ if(isTRUE(verbose)){
 
 
 #' Floor IV USGS
-#' @description This function generates instantaneous NWIS data from \url{https://waterservices.usgs.gov/nwis/iv/}
+#' @description This function generates instantaneous NWIS data from \url{https://waterservices.usgs.gov/}
 #' and then floors to a user defined interval with \link[whitewater]{wwOptions}
 #'  ('1 hour' is default) by taking the mean.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
@@ -759,7 +759,7 @@ ww_floorIVUSGS <- function(procDV,
 
 #' Instantaneous USGS
 #' @description This function generates Instantaneous NWIS data from
-#' \url{https://waterservices.usgs.gov/nwis/iv/}.
+#' \url{https://waterservices.usgs.gov/}.
 #' @param procDV A previously created \link[whitewater]{ww_dvUSGS} object.
 #' @param sites A \code{vector} of USGS NWIS sites. \code{optional}
 #' @param parameter_cd A USGS code parameter code, only if using \code{sites} argument.

@@ -8,10 +8,15 @@ There are currently no downstream dependencies for this package.
 
 ## Notes  
 
-* Changed the version number to something more serious (1.1.2).  
+**1. (problem)** " \\dontrun{} should only be used if the example really cannot be executed
+(e.g. because of missing additional software, missing API keys, ...) by
+the user. That's why wrapping examples in \\dontrun{} adds the comment
+("# Not run:") as a warning for the user. Does not seem necessary.
+Please replace \\dontrun with \\donttest.
+All your examples are wrapped in \\dontrun{} and therefore do not get tested.
+Please unwrap the examples if that is feasible and if they can be
+executed in < 5 sec for each Rd file or create additionally small toy
+examples to allow automatic testing.
+Please put functions which download data in \\donttest{}."
 
-* Fixed the URLs in the README.md file.  
-
-* Change the Title field to all title case.  
-
-* Added a reference for the parallel methods used in the package.
+**1. (response)** The package relies on an API, which requires a connection to the internet. In addition, the `@examples` use parallel processing in some cases. For this reason I think `\dontrun{}` is the best option for `@examples` with API calls and parallel processing examples.

@@ -34,7 +34,7 @@ A \code{tibble} with instantaneous values.
 }
 \description{
 This function generates Instantaneous NWIS data from
-\url{https://waterservices.usgs.gov/nwis/iv/}.
+\url{https://waterservices.usgs.gov/}.
 }
 \note{
 For performance reasons, with multi-site retrievals you may

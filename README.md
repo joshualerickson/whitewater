@@ -4,7 +4,7 @@
 # whitewater
 
 <!-- badges: start -->
-
+[![CRAN status](https://www.r-pkg.org/badges/version/whitewater)](https://CRAN.R-project.org/package=whitewater)
 [![R-CMD-check](https://github.com/joshualerickson/whitewater/workflows/R-CMD-check/badge.svg)](https://github.com/joshualerickson/whitewater/actions)[![codecov](https://codecov.io/gh/joshualerickson/whitewater/branch/main/graph/badge.svg)](https://app.codecov.io/gh/joshualerickson/whitewater)
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html#stable)
@@ -24,7 +24,7 @@ Services)\[<https://waterservices.usgs.gov/>\] REST services parallel
 processing is kept to 120 requests/min. By following this rate limit, we
 can still benefit from parallel processing but also being
 mindful/respectful to the USGS Water Services via
-[{dataRetrieval}](https://github.com/USGS-R/dataRetrieval) and REST
+[{dataRetrieval}](https://github.com/DOI-USGS/dataRetrieval) and REST
 services. Thank you!**
 
 ## Installation
@@ -42,8 +42,7 @@ devtools::install_github("joshualerickson/whitewater")
 This is a basic example which shows you how to solve a common problem:
 get daily values of discharge for multiple sites (all active sites in
 Pacific Northwest (Region 17)) using parallel processing. Please see
-[furrr](https://cran.r-project.org/web/packages/furrr/index.html) and
-[future](https://cran.r-project.org/web/packages/future/index.html) for
+[furrr](https://CRAN.R-project.org/package=furrr) and [future](https://CRAN.R-project.org/package=future) for
 more details on parallel processing methods.
 
 ### Running in parallel

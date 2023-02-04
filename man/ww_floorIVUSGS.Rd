@@ -33,7 +33,7 @@ ww_floorIVUSGS(
 A \code{tibble} with a user defined interval time step.
 }
 \description{
-This function generates instantaneous NWIS data from \url{https://waterservices.usgs.gov/nwis/iv/}
+This function generates instantaneous NWIS data from \url{https://waterservices.usgs.gov/}
 and then floors to a user defined interval with \link[whitewater]{wwOptions}
 ('1 hour' is default) by taking the mean.
 }
