@@ -16,6 +16,8 @@ navbar:
          href: articles/parallel.html
       -  text: Stats
          href: articles/stats.html
+      -  text: Graphing
+         href: articles/graphing.html
     - text: "reference"
       href: reference/index.html
     - icon: fa fa-github fa-lg

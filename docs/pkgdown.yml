@@ -5,6 +5,7 @@ articles:
   get_dv: get_dv.html
   parallel: parallel.html
   stats: stats.html
+  graphing: graphing.html
 last_built: 2022-09-20T00:49Z
 urls:
   reference: https://joshualerickson.github.io/whitewater/reference
