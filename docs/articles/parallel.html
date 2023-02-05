@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">whitewater</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
       </span>
     </div>
 
@@ -48,7 +48,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     <span class="fas fa-book"></span>
      
     Vignettes
@@ -64,6 +64,9 @@
     </li>
     <li>
       <a href="../articles/stats.html">Stats</a>
+    </li>
+    <li>
+      <a href="../articles/graphing.html">Graphing</a>
     </li>
   </ul>
 </li>
@@ -132,7 +135,7 @@
                                            parameterCd <span class="op">=</span> <span class="st">'00060'</span>,
                                            drainAreaMax <span class="op">=</span> <span class="fl">2000</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"# of sites: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">huc17_sites</span><span class="op">)</span><span class="op">)</span>
-<span class="co">#&gt; # of sites:  675</span>
+<span class="co">#&gt; # of sites:  682</span>
 
 <span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_as_sf.html" class="external-link">st_as_sf</a></span><span class="op">(</span><span class="va">huc17_sites</span>, coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'dec_long_va'</span>, <span class="st">'dec_lat_va'</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> 
   <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> 

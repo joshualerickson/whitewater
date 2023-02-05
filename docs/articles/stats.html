@@ -33,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">whitewater</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.2</span>
       </span>
     </div>
 
@@ -48,7 +48,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     <span class="fas fa-book"></span>
      
     Vignettes
@@ -64,6 +64,9 @@
     </li>
     <li>
       <a href="../articles/stats.html">Stats</a>
+    </li>
+    <li>
+      <a href="../articles/graphing.html">Graphing</a>
     </li>
   </ul>
 </li>
@@ -126,7 +129,8 @@
 </h2>
 <p>Sometimes you just want to compare the current flow (water year or past week, whatever you want) to historical flows (figure below). The <code><a href="../reference/ww_statsUSGS.html">ww_statsUSGS()</a></code> function does this for you! It takes the historical values for your parameter (flow in this example) using the USGS Statistics Web Service beta and returns percentiles for each site but also combines current, monthly or yearly values and conditions depending on your choice of <code>temporalFilter</code>. Using the web service is really helpful because it quality controls the incoming data, i.e. data that is incomplete or not qc’d will not be returned. In this vignette we’ll go over the different options/arguments in the <code><a href="../reference/ww_statsUSGS.html">ww_statsUSGS()</a></code> as well as some ways to visualize the results.</p>
 <pre><code><span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'daily'</span> was successfully downloaded.</span>
-<span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (daily) was successfully downloaded.</span></code></pre>
+<span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (daily) was successfully downloaded.</span>
+<span class="co">#&gt; Warning: Removed 24 row(s) containing missing values (geom_path).</span></code></pre>
 <p><img src="stats_files/figure-html/unnamed-chunk-2-1.png" width="768" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level2">
@@ -162,9 +166,10 @@
 <span class="co">#&gt; <span style="color: #949494;">#   p50_va &lt;dbl&gt;, p75_va &lt;dbl&gt;, p80_va &lt;dbl&gt;, p90_va &lt;dbl&gt;, p95_va &lt;dbl&gt;,</span></span>
 <span class="co">#&gt; <span style="color: #949494;">#   month_day &lt;chr&gt;, Date &lt;date&gt;, Flow &lt;dbl&gt;,</span></span>
 <span class="co">#&gt; <span style="color: #949494;">#   Flow_StatisticsStatusDescription &lt;fct&gt;</span></span></code></pre></div>
+<pre><code><span class="co">#&gt; Warning: Removed 24 row(s) containing missing values (geom_path).</span></code></pre>
 <p><img src="stats_files/figure-html/unnamed-chunk-4-1.png" width="768" style="display: block; margin: auto;"></p>
 <p>If we want to compare multiple sites that fine too! In addition, you don’t have to pipe a <code><a href="../reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> object into the function either. You can just input the sites you want; however, I always recommend using <code><a href="../reference/ww_dvUSGS.html">ww_dvUSGS()</a></code> because you’ll likely come back to the daily values anyway but in the example below we’ll just call with inputting the sites into the <code>sites</code> argument. If you’re going to use the <code>sites</code> argument you’ll also need to specify the <code>parameter_cd</code>!</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
 <span class="va">multiple_sites</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span>sites <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'12304500'</span>, <span class="st">'14159200'</span><span class="op">)</span>,
                                parameter_cd <span class="op">=</span> <span class="st">'00060'</span>,
@@ -173,10 +178,11 @@
 <span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (daily) was successfully downloaded.</span>
 <span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">SO FK MCKENZIE RIVER ABV COUGAR LAKE NR RAINBOW OR</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (daily) was successfully downloaded.</span></code></pre></div>
 <pre><code><span class="co">#&gt; Warning: Ignoring unknown parameters: text_smoothing, hjust</span>
-<span class="co">#&gt; Warning: Ignoring unknown aesthetics: label</span></code></pre>
+<span class="co">#&gt; Warning: Ignoring unknown aesthetics: label</span>
+<span class="co">#&gt; Warning: Removed 24 row(s) containing missing values (geom_path).</span></code></pre>
 <p><img src="stats_files/figure-html/unnamed-chunk-6-1.png" width="768" style="display: block; margin: auto;"></p>
 <p>What’s nice about this is you can run in parallel using the argument <code>parallel = TRUE</code> (see <a href="https://joshualerickson.github.io/whitewater/articles/parallel.html">Parallel</a> vignette for more details on parallel processing). We’ll use the <code><a href="../reference/ww_current_conditions.html">ww_current_conditions()</a></code> to get the current streamflow status for the lower 48 that has a description of <code>All-time low for this day</code> and then we’ll use these sites to view the last 30 days!</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
 <span class="va">current_condition</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ww_current_conditions.html">ww_current_conditions</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">StatisticsStatusDescription</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'All-time low for this day'</span><span class="op">)</span>,<span class="op">!</span><span class="va">TimeZoneCode</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">'AKDT'</span>, <span class="st">'AST'</span>,<span class="st">'HST'</span>, <span class="st">'GST'</span><span class="op">)</span><span class="op">)</span>  
 
@@ -195,7 +201,7 @@
 <h3 id="monthly-and-yearly">monthly and yearly<a class="anchor" aria-label="anchor" href="#monthly-and-yearly"></a>
 </h3>
 <p>Now we can looked into the other temporal windows like <code>monthly</code> and <code>yearly</code>. These work the same as daily but now we just need to change the argument.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
 <span class="va">yaak_monthly_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span><span class="va">yaak_dv</span>, temporalFilter <span class="op">=</span> <span class="st">'monthly'</span><span class="op">)</span>
 <span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (monthly) was successfully downloaded.</span>
@@ -216,14 +222,14 @@
 <p><strong>Or, back to the Yaak, MT station.</strong></p>
 <p><img src="stats_files/figure-html/unnamed-chunk-13-1.png" width="768" style="display: block; margin: auto;"></p>
 <p>Same as monthly we can do this for <code>yearly</code>.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
 <span class="va">yaak_yearly_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ww_statsUSGS.html">ww_statsUSGS</a></span><span class="op">(</span><span class="va">yaak_dv</span>, temporalFilter <span class="op">=</span> <span class="st">'yearly'</span><span class="op">)</span>
 <span class="co">#&gt; <span style="color: #00BB00;">v</span> <span style="color: #00BB00;">Yaak River near Troy MT</span> <span style="color: #0000BB;">'NWIS Stat'</span> for Temporal Filter (yearly) was successfully downloaded.</span></code></pre></div>
 <p>Now we can look at the mean value for the year against the 25th and 75th percentiles.</p>
 <p><img src="stats_files/figure-html/unnamed-chunk-15-1.png" width="768" style="display: block; margin: auto;"></p>
 <p>Or look at it in a bar graph with fill as the status.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R">
 <span class="va">p</span> <span class="op">&lt;-</span> <span class="va">yaak_yearly_stats</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> 
 <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span>
