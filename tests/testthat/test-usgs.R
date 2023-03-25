@@ -184,7 +184,7 @@ test_that("water year", {
     dplyr::filter(month %in% c(5,6),
                   year == 1956) %>%
     dplyr::group_by(month) %>%
-    dplyr::slice(n = 1) %>%
+    dplyr::slice(1) %>%
     dplyr::pull(wy),
     c(1956,1957)
   )
@@ -196,7 +196,7 @@ test_that("water year", {
                  dplyr::filter(month %in% c(3,4),
                                year == 1956) %>%
                  dplyr::group_by(month) %>%
-                 dplyr::slice(n = 1) %>%
+                 dplyr::slice(1) %>%
                  dplyr::pull(wy),
                c(1956,1957)
   )
