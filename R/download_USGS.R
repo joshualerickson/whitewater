@@ -162,11 +162,11 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
 
   gage_info <- tibble(
     site_no = site_no,
-    drainage_area = readNWISsite(site_no) %>% select(drain_area_va) %>% as.numeric(),
-    Station = readNWISsite(site_no) %>% select(station_nm) %>% as.character(),
-    lat = readNWISsite(site_no) %>% select(dec_lat_va) %>% as.numeric(),
-    long = readNWISsite(site_no) %>% select(dec_long_va) %>% as.numeric(),
-    altitude = readNWISsite(site_no) %>% select(alt_va) %>% as.numeric()
+    drainage_area = readNWISsite(site_no) %>% dplyr::select(drain_area_va) %>% as.numeric(),
+    Station = readNWISsite(site_no) %>% dplyr::select(station_nm) %>% as.character(),
+    lat = readNWISsite(site_no) %>% dplyr::select(dec_lat_va) %>% as.numeric(),
+    long = readNWISsite(site_no) %>% dplyr::select(dec_long_va) %>% as.numeric(),
+    altitude = readNWISsite(site_no) %>% dplyr::select(alt_va) %>% as.numeric()
   )
 
 
@@ -185,11 +185,11 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
 
     if(length(unique(names_in_params)) != length(cols_in_fd)){
 
-      cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("daily")} was successfully downloaded.
-                              {crayon::red("(warning)")} parameter_cd {usethis::ui_value(names_in_params[which(!(names_in_params %in% cols_in_fd))])} returned no data for {usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)}.')
+      cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, 1)$Station)} {usethis::ui_value("daily")} was successfully downloaded.
+                              {crayon::red("(warning)")} parameter_cd {usethis::ui_value(names_in_params[which(!(names_in_params %in% cols_in_fd))])} returned no data for {usethis::ui_field(dplyr::slice(final_data, 1)$Station)}.')
 
      } else {
-      cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("daily")} was successfully downloaded.')
+      cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, 1)$Station)} {usethis::ui_value("daily")} was successfully downloaded.')
      }
   }}
 
@@ -317,7 +317,7 @@ if(missing(procDV)) {
                                         site_no,
                                         obs_per_wy) %>%
                                  dplyr::group_by(site_no,wy) %>%
-                                 dplyr::slice(n = 1) %>%
+                                 dplyr::slice(1) %>%
                                  dplyr::ungroup(), by = c('site_no', 'wy')) %>%
                       dplyr::group_by(site_no) %>%
                       dplyr::add_count(name = 'wy_count') %>%
@@ -500,7 +500,7 @@ ww_wymUSGS <- function(procDV, sites = NULL, parallel = FALSE, verbose = TRUE, .
                                                        obs_per_wy,
                                                        obs_per_month) %>%
                                          dplyr::group_by(site_no, wy, month) %>%
-                                         dplyr::slice(n = 1) %>%
+                                         dplyr::slice(1) %>%
                                          dplyr::ungroup(), by = c('site_no', 'wy', 'month')) %>%
                       dplyr::group_by(site_no, wy) %>%
                       dplyr::add_count(name = 'wym_count') %>%
@@ -596,7 +596,7 @@ ww_monthUSGS <- function(procDV, sites = NULL, parallel = FALSE, verbose = TRUE,
                                     site_no,
                                     month_abb) %>%
                                   dplyr::group_by(site_no, month_abb) %>%
-                                  dplyr::slice(n = 1) %>%
+                                  dplyr::slice(1) %>%
                                   dplyr::ungroup(), by = c('site_no', 'month_abb')))
 
 
@@ -973,21 +973,21 @@ if(isTRUE(verbose)){
     if(purrr::is_empty(param_names)){
 
         if(type == 'inst'){
-        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("instantaneous values")} were successfully downloaded.')
+        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, 1)$Station)} {usethis::ui_value("instantaneous values")} were successfully downloaded.')
 
         } else if (type == 'hour'){
-        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("floored values")} were successfully downloaded.')
+        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, 1)$Station)} {usethis::ui_value("floored values")} were successfully downloaded.')
 
       }
 
          } else {
 
     if(type == 'inst'){
-    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("instantaneous values")} were successfully downloaded.
+    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, 1)$Station)} {usethis::ui_value("instantaneous values")} were successfully downloaded.
                               {crayon::red("(warning)")} Parameter(s) {usethis::ui_value(param_names)} returned no data.')
 
       } else if (type == 'hour'){
-    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, n = 1)$Station)} {usethis::ui_value("floored values")} were successfully downloaded.
+    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(df_final, 1)$Station)} {usethis::ui_value("floored values")} were successfully downloaded.
                               {crayon::red("(warning)")} Parameter(s) {usethis::ui_value(param_names)} returned no data.')
 
         }
@@ -1032,11 +1032,11 @@ peaks_USGS <- function(site_no, wy_month, verbose, dv = TRUE, delay){
 if(isTRUE(verbose)){
   if(nrow(final_data) < 1){
 
-    cli::cli_alert_warning('{usethis::ui_field(dplyr::slice(final_data, n = 1)$site_no)} ran into an error.')
+    cli::cli_alert_warning('{usethis::ui_field(dplyr::slice(final_data, 1)$site_no)} ran into an error.')
 
   } else {
 
-    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$site_no)} {usethis::ui_value("peak flows")} were successfully downloaded.')
+    cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, 1)$site_no)} {usethis::ui_value("peak flows")} were successfully downloaded.')
 
   }
 }

@@ -221,11 +221,11 @@ usgs_stats_fun <- function(data, type, verbose, delay) {
 
       if(length(unique(final_data$parameter_cd)) != length(data$params[[1]])){
 
-        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("NWIS Stat")} for Temporal Filter ({type}) was successfully downloaded.
-                              {crayon::red("(warning)")} parameter_cd {data$params[[1]][which(!(data$params[[1]] %in% unique(final_data$parameter_cd)))]} returned no data for {usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)}.')
+        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, 1)$Station)} {usethis::ui_value("NWIS Stat")} for Temporal Filter ({type}) was successfully downloaded.
+                              {crayon::red("(warning)")} parameter_cd {data$params[[1]][which(!(data$params[[1]] %in% unique(final_data$parameter_cd)))]} returned no data for {usethis::ui_field(dplyr::slice(final_data, 1)$Station)}.')
 
       } else {
-        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, n = 1)$Station)} {usethis::ui_value("NWIS Stat")} for Temporal Filter ({type}) was successfully downloaded.')
+        cli::cli_alert_success('{usethis::ui_field(dplyr::slice(final_data, 1)$Station)} {usethis::ui_value("NWIS Stat")} for Temporal Filter ({type}) was successfully downloaded.')
       }
     }
   }
