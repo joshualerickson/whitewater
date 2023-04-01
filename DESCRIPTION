@@ -1,6 +1,6 @@
 Package: whitewater
 Title: Parallel Processing Options for Package 'dataRetrieval'
-Version: 0.1.2
+Version: 0.1.3
 Authors@R: 
     person(given = "Josh",
            family = "Erickson",
