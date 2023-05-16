@@ -75,6 +75,23 @@ add_date_counts <- function(data) {
     dplyr::ungroup()
 }
 
+#' Add Proportion
+#' @description Adds proportion of observation per water year.
+#'
+#' @param data A daily value df
+#'
+#' @return counts within df
+#' @noRd
+add_proportion <- function(data) {
+
+  dplyr::group_by(data, site_no, wy) %>%
+    dplyr::add_count(name = 'obs_per_wy') %>%
+    dplyr::ungroup() %>%
+    dplyr::group_by(site_no, wy, month) %>%
+    dplyr::add_count(name = 'obs_per_month') %>%
+    dplyr::ungroup()
+}
+
 #' water year to months
 #' @description Change wy_month to doy.
 #' @param wy_month A numeric
