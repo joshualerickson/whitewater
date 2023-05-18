@@ -89,7 +89,8 @@ add_proportion <- function(data) {
     dplyr::group_by(data, site_no, wy) %>%
     dplyr::mutate(dplyr::across(dplyr::any_of(cols),
                                 list(max_prop = ~.x/max(.x, na.rm = TRUE)
-                                )))
+                                ))) %>%
+    dplyr::ungroup()
 }
 
 #' water year to months
