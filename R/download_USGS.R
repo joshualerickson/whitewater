@@ -125,6 +125,8 @@ ww_dvUSGS <- function(sites,
                          drainage_area = drainage_area*0.621371) %>%
                   add_date_counts()
 
+  usgs_raw_dv <- usgs_raw_dv %>% add_proportion()
+
   attr(usgs_raw_dv, 'wy_month') <- wy_month
   attr(usgs_raw_dv, 'parameter_cd') <- parameter_cd
   attr(usgs_raw_dv, 'stat_cd') <- stat_cd

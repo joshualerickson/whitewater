@@ -75,6 +75,23 @@ add_date_counts <- function(data) {
     dplyr::ungroup()
 }
 
+#' Add Proportion
+#' @description Adds proportion of observation per water year based on the maximum.
+#'
+#' @param data A daily value df
+#'
+#' @return a proportion column within df per water year.
+#' @noRd
+add_proportion <- function(data) {
+
+    cols <- cols_to_update(data)
+
+    dplyr::group_by(data, site_no, wy) %>%
+    dplyr::mutate(dplyr::across(dplyr::any_of(cols),
+                                list(max_prop = ~.x/max(.x, na.rm = TRUE)
+                                )))
+}
+
 #' water year to months
 #' @description Change wy_month to doy.
 #' @param wy_month A numeric
