@@ -1,4 +1,20 @@
 
+
+
+#' Title
+#'
+#' @return
+#' @export
+#'
+#'
+#' @examples
+#'
+add_stuff <- function() {
+
+
+}
+
+
 #'Water Year These functions are hi-jacked from smwrBase package.
 #'
 #'Create an ordered factor or numeric values from a vector of dates based on
