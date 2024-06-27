@@ -27,6 +27,8 @@ The goal of whitewater is to provide sequential and parallel processing for USGS
 
 ## Attention!  
 
+**Please read the new information about USGS Water Services via [{dataRetrieval}](https://github.com/DOI-USGS/dataRetrieval). I will try to get this updated as soon as I can, thank you for your patience!**
+
 **Due to potentially crashing (USGS Water Services)[https://waterservices.usgs.gov/] REST services parallel processing is kept to 120 requests/min. By following this rate limit, we can still benefit from parallel processing but also being mindful/respectful to the USGS Water Services via [{dataRetrieval}](https://github.com/DOI-USGS/dataRetrieval) and REST services. Thank you!**    
 
 ## Installation
@@ -111,7 +113,7 @@ pnw_wy
   filter( n > 10) %>% 
   nest() %>% 
   mutate(model = map(data, ~broom::tidy(Kendall::MannKendall(.$peak_va))['p.value'])) %>% 
-  unnest() %>% slice(n=1) %>% 
+  unnest() %>% slice(1) %>% 
   ggplot(aes(p.value)) + 
   geom_histogram(aes(fill = ..x..)) +
   geom_vline(xintercept = 0.05, linetype = 2) + 

@@ -19,8 +19,10 @@ stat codes, which results in a **tidy** style data frame.
 
 ## Attention!
 
-**Due to potentially crashing (USGS Water
-Services)\[<https://waterservices.usgs.gov/>\] REST services parallel
+**Please read the new information about USGS Water Services via [{dataRetrieval}](https://github.com/DOI-USGS/dataRetrieval).
+I will try to get this updated as soon as I can, thank you for your patience!**
+
+**Due to potentially crashing [(USGS Water Services)](https://waterservices.usgs.gov/) REST services parallel
 processing is kept to 120 requests/min. By following this rate limit, we
 can still benefit from parallel processing but also being
 mindful/respectful to the USGS Water Services via
