@@ -36,7 +36,7 @@
 #'
 #' library(future)
 #' #need to call future::plan()
-#' plan(multisession(workers = availableCores()-1))
+#' plan(multisession(workers = parallely::availableCores()-1))
 #'
 #' pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
 #' parameter_cd = '00060',
@@ -239,7 +239,7 @@ prepping_USGSdv <- function(site_no, parameter_cd, start_date, end_date, stat_cd
 #'
 #' library(future)
 #' #need to call future::plan()
-#' plan(multisession(workers = availableCores()-1))
+#' plan(multisession(workers = parallely::availableCores()-1))
 #'
 #' pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
 #' parameter_cd = '00060',
@@ -673,7 +673,7 @@ if(isTRUE(verbose)){
 #'
 #' library(future)
 #' #need to call future::plan()
-#' plan(multisession(workers = availableCores()-1))
+#' plan(multisession(workers = parallely::availableCores()-1))
 #'
 #' pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
 #' parameter_cd = '00060',
@@ -812,7 +812,7 @@ ww_floorIVUSGS <- function(procDV,
 #'
 #' library(future)
 #' #need to call future::plan()
-#' plan(multisession(workers = availableCores()-1))
+#' plan(multisession(workers = parallely::availableCores()-1))
 #'
 #' pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
 #' parameter_cd = '00060',
