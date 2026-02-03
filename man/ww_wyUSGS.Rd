@@ -50,7 +50,7 @@ parameterCd = '00060')
 
 library(future)
 #need to call future::plan()
-plan(multisession(workers = availableCores()-1))
+plan(multisession(workers = parallelly::availableCores()-1))
 
 pnw_dv <- ww_dvUSGS(huc17_sites$site_no,
 parameter_cd = '00060',
